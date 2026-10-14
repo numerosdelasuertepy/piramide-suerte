@@ -3,14 +3,15 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Pirámide de la Suerte - Quiniela y Loterías</title>
+  <title>Pirámide de la Suerte - Loterías y Quinielas</title>
   <style>
     :root {
-      --bg-color: #f4f7f6;
+      --bg-color: #f0f4f8;
       --card-bg: #ffffff;
-      --primary: #2e7d32;
+      --primary: #1b5e20;
+      --secondary: #0d47a1;
       --accent: #d81b60;
-      --text: #333333;
+      --text: #212121;
     }
 
     body {
@@ -25,22 +26,22 @@
 
     .container {
       background: var(--card-bg);
-      max-width: 480px;
+      max-width: 500px;
       width: 100%;
       padding: 20px;
       border-radius: 16px;
-      box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+      box-shadow: 0 4px 20px rgba(0,0,0,0.08);
       text-align: center;
     }
 
     h1 {
       color: var(--primary);
-      font-size: 1.5rem;
+      font-size: 1.6rem;
       margin-bottom: 5px;
     }
 
     p.subtitle {
-      font-size: 0.9rem;
+      font-size: 0.85rem;
       color: #666;
       margin-bottom: 20px;
     }
@@ -55,15 +56,17 @@
       font-size: 0.85rem;
       display: block;
       margin-bottom: 5px;
+      color: #444;
     }
 
     input, select {
       width: 100%;
       padding: 10px;
-      border: 1px solid #ccc;
+      border: 1px solid #cccccc;
       border-radius: 8px;
       box-sizing: border-box;
-      font-size: 1rem;
+      font-size: 0.95rem;
+      background-color: #fafafa;
     }
 
     button {
@@ -76,11 +79,12 @@
       font-weight: bold;
       border-radius: 8px;
       cursor: pointer;
+      margin-top: 5px;
       transition: background 0.2s;
     }
 
     button:hover {
-      background: #1b5e20;
+      background: #123e15;
     }
 
     .results {
@@ -90,14 +94,26 @@
 
     .pyramid-box {
       background: #e8f5e9;
+      border: 1px solid #c8e6c9;
       padding: 15px;
       border-radius: 12px;
-      font-family: monospace;
+      font-family: 'Courier New', Courier, monospace;
       font-weight: bold;
       font-size: 1.1rem;
       line-height: 1.4;
-      letter-spacing: 4px;
+      letter-spacing: 3px;
       margin-bottom: 20px;
+      color: #1b5e20;
+    }
+
+    .section-title {
+      font-size: 1rem;
+      font-weight: bold;
+      margin: 15px 0 10px;
+      color: var(--secondary);
+      border-bottom: 2px solid #e0e0e0;
+      padding-bottom: 5px;
+      text-align: left;
     }
 
     .cards-grid {
@@ -107,30 +123,52 @@
     }
 
     .card {
-      background: #fff8e1;
-      border: 1px solid #ffe082;
+      background: #f9f9f9;
+      border: 1px solid #e0e0e0;
       border-radius: 10px;
       padding: 10px;
+      text-align: center;
     }
 
     .card.full {
       grid-column: span 2;
-      background: #fce4ec;
-      border-color: #f8bbd0;
     }
 
     .card-title {
-      font-size: 0.8rem;
+      font-size: 0.75rem;
       font-weight: bold;
-      color: #555;
+      color: #666;
       margin-bottom: 5px;
       text-transform: uppercase;
     }
 
     .card-value {
-      font-size: 1.1rem;
+      font-size: 1rem;
       font-weight: bold;
       color: var(--accent);
+      word-break: break-all;
+    }
+
+    .balls-container {
+      display: flex;
+      justify-content: center;
+      gap: 8px;
+      flex-wrap: wrap;
+      margin-top: 10px;
+    }
+
+    .ball {
+      width: 38px;
+      height: 38px;
+      background: radial-gradient(circle at 30% 30%, #ff5252, #c62828);
+      color: white;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: bold;
+      font-size: 0.95rem;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.2);
     }
   </style>
 </head>
@@ -138,53 +176,91 @@
 
   <div class="container">
     <h1>Pirámide de la Suerte 🍀</h1>
-    <p class="subtitle">Generador de combinaciones para Lotería y Quiniela</p>
+    <p class="subtitle">Generador de Pronósticos para Quinielas y Loterías</p>
+
+    <div class="form-group">
+      <label for="gameSelect">Selecciona el Juego / Sorteo:</label>
+      <select id="gameSelect" onchange="cambiarJuego()">
+        <option value="quiniela">Quiniela (Paraguay / Argentina)</option>
+        <option value="quini6">Quini 6 (6 números del 00 al 45)</option>
+        <option value="megalotto">Mega Lotto PY (6 números del 01 al 40)</option>
+        <option value="senete">Seneté / Telebingo</option>
+      </select>
+    </div>
 
     <div class="form-group">
       <label for="dateInput">Selecciona la Fecha:</label>
       <input type="date" id="dateInput" />
     </div>
 
-    <button onclick="generarPiramide()">Generar Números</button>
+    <button onclick="generarCombinaciones()">Generar Pronóstico</button>
 
     <div class="results" id="resultsBox">
-      <h3>Pirámide Generada</h3>
+      
+      <div class="section-title">Pirámide del Día</div>
       <div class="pyramid-box" id="pyramidDisplay"></div>
 
-      <div class="cards-grid">
-        <div class="card">
-          <div class="card-title">Dígito Punta</div>
-          <div class="card-value" id="digitoPunta">-</div>
-        </div>
+      <!-- Sección para Quiniela -->
+      <div id="quinielaResults">
+        <div class="section-title">Resultados para Quiniela</div>
+        <div class="cards-grid">
+          
+          <div class="card">
+            <div class="card-title">Dígito Punta</div>
+            <div class="card-value" id="digitoPunta">-</div>
+          </div>
 
-        <div class="card">
-          <div class="card-title">Ambos / Pares</div>
-          <div class="card-value" id="paresFuertes">-</div>
-        </div>
+          <div class="card">
+            <div class="card-title">4 Ambos (Pares)</div>
+            <div class="card-value" id="ambosFuertes">-</div>
+          </div>
 
-        <div class="card full">
-          <div class="card-title">Ternos / Tripletas Base</div>
-          <div class="card-value" id="tripletaBase">-</div>
+          <div class="card full">
+            <div class="card-title">4 Ambos Impares</div>
+            <div class="card-value" id="ambosImpares">-</div>
+          </div>
+
+          <div class="card full">
+            <div class="card-title">4 Ternos (3 Cifras)</div>
+            <div class="card-value" id="ternosFuertes">-</div>
+          </div>
+
+          <div class="card full">
+            <div class="card-title">Cuaternos (4 Cifras)</div>
+            <div class="card-value" id="cuaternosFuertes">-</div>
+          </div>
+
         </div>
       </div>
+
+      <!-- Sección para Loterías (Quini 6 / Mega Lotto) -->
+      <div id="loteriaResults" style="display: none;">
+        <div class="section-title" id="loteriaTitle">Combinación de Bolillas</div>
+        <div class="balls-container" id="ballsDisplay"></div>
+      </div>
+
     </div>
   </div>
 
   <script>
-    // Establecer fecha de hoy por defecto
     document.getElementById('dateInput').valueAsDate = new Date();
 
-    function generarPiramide() {
+    function cambiarJuego() {
+      const juego = document.getElementById('gameSelect').value;
+      if (document.getElementById('resultsBox').style.display === 'block') {
+        generarCombinaciones();
+      }
+    }
+
+    function generarCombinaciones() {
       const dateVal = document.getElementById('dateInput').value;
       if (!dateVal) return;
 
       const [year, month, day] = dateVal.split('-');
-      
-      // Cadena base (ej: 13102026 para el 13/10/2026)
       let currentLevel = `${day}${month}${year}`;
       let pyramid = [currentLevel];
 
-      // Construcción paso a paso sumando dígitos adyacentes (módula 10)
+      // Construcción de la Pirámide de la Suerte (Suma modular)
       while (currentLevel.length > 1) {
         let nextLevel = "";
         for (let i = 0; i < currentLevel.length - 1; i++) {
@@ -195,20 +271,89 @@
         currentLevel = nextLevel;
       }
 
-      // Mostrar la pirámide formateada
+      // Mostrar pirámide
       document.getElementById('pyramidDisplay').innerHTML = pyramid.join('<br>');
 
-      // Extraer datos clave para Quiniela/Lotería
-      const digitoPunta = pyramid[pyramid.length - 1]; // Último número
-      const parBase = pyramid[pyramid.length - 2];     // Penúltimo nivel (2 dígitos)
-      const tripleta = pyramid[pyramid.length - 3];    // Antepenúltimo nivel (3 dígitos)
-      
-      // Obtener ternos adicionales de la base de la pirámide
-      const tripletaSecundarios = pyramid[pyramid.length - 4] ? pyramid[pyramid.length - 4].substring(0, 3) : '';
+      const juego = document.getElementById('gameSelect').value;
 
-      document.getElementById('digitoPunta').innerText = digitoPunta;
-      document.getElementById('paresFuertes').innerText = `${parBase}, ${parBase.split('').reverse().join('')}`;
-      document.getElementById('tripletaBase').innerText = `${tripleta}, ${tripletaSecundarios}`;
+      if (juego === 'quiniela' || juego === 'senete') {
+        document.getElementById('quinielaResults').style.display = 'block';
+        document.getElementById('loteriaResults').style.display = 'none';
+
+        // 1. Dígito Punta
+        const punta = pyramid[pyramid.length - 1];
+        document.getElementById('digitoPunta').innerText = punta;
+
+        // 2. Extraer 4 Ambos (Pares)
+        const p1 = pyramid[pyramid.length - 2];
+        const p2 = pyramid[pyramid.length - 3].substring(0, 2);
+        const p3 = p1.split('').reverse().join('');
+        const p4 = p2.split('').reverse().join('');
+        document.getElementById('ambosFuertes').innerText = `${p1} - ${p2} - ${p3} - ${p4}`;
+
+        // 3. Extraer 4 Ambos Impares
+        let impares = [];
+        let allNumbers = pyramid.join('');
+        for (let i = 0; i < allNumbers.length - 1; i++) {
+          let num = parseInt(allNumbers.substring(i, i + 2));
+          if (num % 2 !== 0 && !impares.includes(num)) {
+            impares.push(num < 10 ? '0' + num : num.toString());
+          }
+          if (impares.length === 4) break;
+        }
+        document.getElementById('ambosImpares').innerText = impares.join(' - ');
+
+        // 4. Extraer 4 Ternos (3 Cifras)
+        const t1 = pyramid[pyramid.length - 3];
+        const t2 = pyramid[pyramid.length - 4] ? pyramid[pyramid.length - 4].substring(0, 3) : "123";
+        const t3 = pyramid[pyramid.length - 4] ? pyramid[pyramid.length - 4].substring(1, 4) : "456";
+        const t4 = t1.split('').reverse().join('');
+        document.getElementById('ternosFuertes').innerText = `${t1} - ${t2} - ${t3} - ${t4}`;
+
+        // 5. Extraer Cuaternos (4 Cifras)
+        const c1 = pyramid[pyramid.length - 4] ? pyramid[pyramid.length - 4].substring(0, 4) : "1234";
+        const c2 = pyramid[pyramid.length - 5] ? pyramid[pyramid.length - 5].substring(0, 4) : "5678";
+        document.getElementById('cuaternosFuertes').innerText = `${c1} - ${c2}`;
+
+      } else {
+        // Lógica para Quini 6 y Mega Lotto
+        document.getElementById('quinielaResults').style.display = 'none';
+        document.getElementById('loteriaResults').style.display = 'block';
+
+        let maxNum = (juego === 'quini6') ? 45 : 40;
+        let minNum = (juego === 'quini6') ? 0 : 1;
+        document.getElementById('loteriaTitle').innerText = (juego === 'quini6') ? 'Bolillas para Quini 6 (00 a 45)' : 'Bolillas para Mega Lotto (01 a 40)';
+
+        let bolillas = [];
+        let fullString = pyramid.join('');
+
+        for (let i = 0; i < fullString.length - 1; i += 2) {
+          let val = parseInt(fullString.substring(i, i + 2));
+          if (val >= minNum && val <= maxNum && !bolillas.includes(val)) {
+            bolillas.push(val);
+          }
+          if (bolillas.length === 6) break;
+        }
+
+        // Si faltan bolillas, rellenar de la secuencia
+        let seed = 1;
+        while (bolillas.length < 6) {
+          if (!bolillas.includes(seed) && seed <= maxNum) {
+            bolillas.push(seed);
+          }
+          seed++;
+        }
+
+        bolillas.sort((a, b) => a - b);
+
+        let htmlBolillas = "";
+        bolillas.forEach(num => {
+          let formatted = num < 10 ? '0' + num : num;
+          htmlBolillas += `<div class="ball">${formatted}</div>`;
+        });
+
+        document.getElementById('ballsDisplay').innerHTML = htmlBolillas;
+      }
 
       document.getElementById('resultsBox').style.display = 'block';
     }
