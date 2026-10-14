@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Pirámide de la Suerte - Quiniela y Loterías</title>
+  <style>
+    :root {
+      --bg-color: #f4f7f6;
+      --card-bg: #ffffff;
+      --primary: #2e7d32;
+      --accent: #d81b60;
+      --text: #333333;
+    }
+
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background-color: var(--bg-color);
+      color: var(--text);
+      margin: 0;
+      padding: 15px;
+      display: flex;
+      justify-content: center;
+    }
+
+    .container {
+      background: var(--card-bg);
+      max-width: 480px;
+      width: 100%;
+      padding: 20px;
+      border-radius: 16px;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+      text-align: center;
+    }
+
+    h1 {
+      color: var(--primary);
+      font-size: 1.5rem;
+      margin-bottom: 5px;
+    }
+
+    p.subtitle {
+      font-size: 0.9rem;
+      color: #666;
+      margin-bottom: 20px;
+    }
+
+    .form-group {
+      margin-bottom: 15px;
+      text-align: left;
+    }
+
+    label {
+      font-weight: bold;
+      font-size: 0.85rem;
+      display: block;
+      margin-bottom: 5px;
+    }
+
+    input, select {
+      width: 100%;
+      padding: 10px;
+      border: 1px solid #ccc;
+      border-radius: 8px;
+      box-sizing: border-box;
+      font-size: 1rem;
+    }
+
+    button {
+      width: 100%;
+      background: var(--primary);
+      color: white;
+      border: none;
+      padding: 12px;
+      font-size: 1rem;
+      font-weight: bold;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+
+    button:hover {
+      background: #1b5e20;
+    }
+
+    .results {
+      margin-top: 25px;
+      display: none;
+    }
+
+    .pyramid-box {
+      background: #e8f5e9;
+      padding: 15px;
+      border-radius: 12px;
+      font-family: monospace;
+      font-weight: bold;
+      font-size: 1.1rem;
+      line-height: 1.4;
+      letter-spacing: 4px;
+      margin-bottom: 20px;
+    }
+
+    .cards-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+
+    .card {
+      background: #fff8e1;
+      border: 1px solid #ffe082;
+      border-radius: 10px;
+      padding: 10px;
+    }
+
+    .card.full {
+      grid-column: span 2;
+      background: #fce4ec;
+      border-color: #f8bbd0;
+    }
+
+    .card-title {
+      font-size: 0.8rem;
+      font-weight: bold;
+      color: #555;
+      margin-bottom: 5px;
+      text-transform: uppercase;
+    }
+
+    .card-value {
+      font-size: 1.1rem;
+      font-weight: bold;
+      color: var(--accent);
+    }
+  </style>
+</head>
+<body>
+
+  <div class="container">
+    <h1>Pirámide de la Suerte 🍀</h1>
+    <p class="subtitle">Generador de combinaciones para Lotería y Quiniela</p>
+
+    <div class="form-group">
+      <label for="dateInput">Selecciona la Fecha:</label>
+      <input type="date" id="dateInput" />
+    </div>
+
+    <button onclick="generarPiramide()">Generar Números</button>
+
+    <div class="results" id="resultsBox">
+      <h3>Pirámide Generada</h3>
+      <div class="pyramid-box" id="pyramidDisplay"></div>
+
+      <div class="cards-grid">
+        <div class="card">
+          <div class="card-title">Dígito Punta</div>
+          <div class="card-value" id="digitoPunta">-</div>
+        </div>
+
+        <div class="card">
+          <div class="card-title">Ambos / Pares</div>
+          <div class="card-value" id="paresFuertes">-</div>
+        </div>
+
+        <div class="card full">
+          <div class="card-title">Ternos / Tripletas Base</div>
+          <div class="card-value" id="tripletaBase">-</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Establecer fecha de hoy por defecto
+    document.getElementById('dateInput').valueAsDate = new Date();
+
+    function generarPiramide() {
+      const dateVal = document.getElementById('dateInput').value;
+      if (!dateVal) return;
+
+      const [year, month, day] = dateVal.split('-');
+      
+      // Cadena base (ej: 13102026 para el 13/10/2026)
+      let currentLevel = `${day}${month}${year}`;
+      let pyramid = [currentLevel];
+
+      // Construcción paso a paso sumando dígitos adyacentes (módula 10)
+      while (currentLevel.length > 1) {
+        let nextLevel = "";
+        for (let i = 0; i < currentLevel.length - 1; i++) {
+          let sum = (parseInt(currentLevel[i]) + parseInt(currentLevel[i + 1])) % 10;
+          nextLevel += sum;
+        }
+        pyramid.push(nextLevel);
+        currentLevel = nextLevel;
+      }
+
+      // Mostrar la pirámide formateada
+      document.getElementById('pyramidDisplay').innerHTML = pyramid.join('<br>');
+
+      // Extraer datos clave para Quiniela/Lotería
+      const digitoPunta = pyramid[pyramid.length - 1]; // Último número
+      const parBase = pyramid[pyramid.length - 2];     // Penúltimo nivel (2 dígitos)
+      const tripleta = pyramid[pyramid.length - 3];    // Antepenúltimo nivel (3 dígitos)
+      
+      // Obtener ternos adicionales de la base de la pirámide
+      const tripletaSecundarios = pyramid[pyramid.length - 4] ? pyramid[pyramid.length - 4].substring(0, 3) : '';
+
+      document.getElementById('digitoPunta').innerText = digitoPunta;
+      document.getElementById('paresFuertes').innerText = `${parBase}, ${parBase.split('').reverse().join('')}`;
+      document.getElementById('tripletaBase').innerText = `${tripleta}, ${tripletaSecundarios}`;
+
+      document.getElementById('resultsBox').style.display = 'block';
+    }
+  </script>
+</body>
+</html>
