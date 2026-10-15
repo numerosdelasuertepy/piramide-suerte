@@ -611,6 +611,60 @@
     return Array.from(encontrados);
   }
 
+  function obtenerNumerosLotoDiversificados(niveles, min, max, vibracionDia, calientes) {
+    const encontrados = new Set();
+    const strNiveles = niveles.map(n => n.join(''));
+    
+    // Extracción base de la pirámide
+    for (let fila of strNiveles) {
+      for (let i = 0; i <= fila.length - 2; i++) {
+        encontrados.add(fila.substring(i, i + 2));
+      }
+    }
+
+    // Salto y desplazamiento vibracional (Evita sesgo fijo de fecha)
+    const digitosBase = niveles[0];
+    for (let i = 0; i < digitosBase.length; i++) {
+      let num1 = (digitosBase[i] + vibracionDia) % 10;
+      let num2 = (digitosBase[(i + vibracionDia) % digitosBase.length]);
+      encontrados.add(`${num1}${num2}`);
+      encontrados.add(`${num2}${num1}`);
+    }
+
+    let validos = Array.from(encontrados)
+      .map(n => parseInt(n))
+      .filter(n => n >= min && n <= max)
+      .map(n => n < 10 ? '0' + n : '' + n);
+
+    // Cruzar con peso de estadísticas históricas cargadas
+    let ordenados = priorizarPorVibracionYEstadisticas(validos, vibracionDia, calientes);
+
+    // Filtro de Diversificación de Décadas (Máximo 2 por década)
+    let seleccionados = [];
+    let conteoDecanas = {};
+
+    for (let numStr of ordenados) {
+      let decena = Math.floor(parseInt(numStr) / 10);
+      if ((conteoDecanas[decena] || 0) < 2) {
+        seleccionados.push(numStr);
+        conteoDecanas[decena] = (conteoDecanas[decena] || 0) + 1;
+      }
+      if (seleccionados.length === 6) break;
+    }
+
+    let intento = 1;
+    while (seleccionados.length < 6) {
+      let rand = ((vibracionDia * 7 + intento * 13) % (max - min + 1)) + min;
+      let randStr = rand < 10 ? '0' + rand : '' + rand;
+      if (!seleccionados.includes(randStr)) {
+        seleccionados.push(randStr);
+      }
+      intento++;
+    }
+
+    return seleccionados.sort((a, b) => parseInt(a) - parseInt(b));
+  }
+
   function generar() {
     const juego = document.getElementById('gameSelect').value;
     const fechaVal = document.getElementById('dateInput').value;
@@ -675,21 +729,7 @@
       }
       document.getElementById('resultsTitle').innerText = `Jugada Única Recomendada para ${nombre}`;
 
-      const candidatos = obtenerNumerosDePiramide(niveles, 2);
-      const validos = Array.from(new Set(
-        candidatos
-          .map(n => parseInt(n))
-          .filter(n => n >= min && n <= max)
-      )).map(n => n < 10 ? '0' + n : '' + n);
-
-      let finalNums = priorizarPorVibracionYEstadisticas(validos, vibracionDia, calientes).slice(0, 6);
-      
-      while (finalNums.length < 6) {
-        let rand = Math.floor(Math.random() * (max - min + 1)) + min;
-        let randStr = rand < 10 ? '0' + rand : '' + rand;
-        if (!finalNums.includes(randStr)) finalNums.push(randStr);
-      }
-      finalNums.sort((a,b) => parseInt(a) - parseInt(b));
+      const finalNums = obtenerNumerosLotoDiversificados(niveles, min, max, vibracionDia, calientes);
 
       resBox.innerHTML = `
         <div class="card">
