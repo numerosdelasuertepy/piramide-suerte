@@ -32,6 +32,7 @@
       padding: 25px;
       border-radius: 16px;
       box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+      position: relative;
     }
     h1 {
       text-align: center;
@@ -136,16 +137,44 @@
     .hot-badge {
       color: var(--hot);
       font-weight: bold;
+      font-size: 14px;
     }
     .cold-badge {
       color: var(--cold);
       font-weight: bold;
+      font-size: 14px;
     }
     .stats-panel {
       background: #f1f3f5;
-      padding: 12px;
-      border-radius: 8px;
-      margin-top: 10px;
+      padding: 14px;
+      border-radius: 10px;
+      margin-top: 15px;
+      border-left: 4px solid var(--primary);
+    }
+    .admin-panel {
+      display: none;
+      background: #fff3cd;
+      border: 1px solid #ffeeba;
+      padding: 15px;
+      border-radius: 10px;
+      margin-top: 20px;
+    }
+    .badge-chip {
+      display: inline-block;
+      padding: 4px 8px;
+      background: #ffffff;
+      border-radius: 6px;
+      border: 1px solid #ced4da;
+      margin: 2px;
+      font-weight: bold;
+      font-size: 14px;
+    }
+    .footer-admin-link {
+      text-align: center;
+      margin-top: 30px;
+      font-size: 12px;
+      color: #adb5bd;
+      cursor: pointer;
     }
   </style>
 </head>
@@ -153,7 +182,7 @@
 
 <div class="container">
   <h1>Pirámide de la Suerte PY 🍀</h1>
-  <div class="subtitle">Pronósticos e Historial de Sorteos (A la Cabeza)</div>
+  <div class="subtitle">Pronósticos y Estadísticas de Loterías</div>
 
   <label for="gameSelect">Selecciona el Juego / Sorteo:</label>
   <select id="gameSelect" onchange="alCambiarJuego()">
@@ -165,7 +194,7 @@
   <!-- SELECCIÓN DE TURNO PARA QUINIELA -->
   <div id="turnoContainer">
     <label for="shiftSelect">Selecciona el Turno del Sorteo:</label>
-    <select id="shiftSelect" onchange="cargarEstadisticasGuardadas()">
+    <select id="shiftSelect" onchange="alCambiarTurno()">
       <option value="general">General (Todos los turnos)</option>
       <option value="tempranero">Tempranero (Lun a Sáb)</option>
       <option value="matutino">Matutino (Lun a Sáb)</option>
@@ -177,12 +206,7 @@
   <label for="dateInput">Selecciona la Fecha:</label>
   <input type="date" id="dateInput">
 
-  <!-- MÓDULO DE HISTORIAL A LA CABEZA -->
-  <div class="section-title">👑 Historial "A la Cabeza" (Posición 1)</div>
-  <label for="historyInput" id="historyLabel">Ingresa las decenas (2 cifras) que salieron a la cabeza en los últimos sorteos:</label>
-  <textarea id="historyInput" placeholder="Ejemplo: 12, 45, 88, 05, 34, 90..."></textarea>
-  <button class="btn-secondary" onclick="guardarYAnalizarHistorial()">Calcular Frecuencia a la Cabeza</button>
-
+  <!-- VISTA PÚBLICA PARA APOSTADORES: RESUMEN DE ESTADÍSTICAS -->
   <div id="statsContainer"></div>
 
   <button onclick="generar()">Generar Pronóstico Magnético</button>
@@ -192,10 +216,42 @@
 
   <div id="resultsTitle" class="section-title">Resultados</div>
   <div id="resultsContainer"></div>
+
+  <!-- PANEL OCULTO SOLO PARA ADMINISTRACIÓN / CARGA DE DATOS -->
+  <div id="adminPanel" class="admin-panel">
+    <div style="font-weight:bold; color:#856404; margin-bottom:10px;">🔒 Panel de Administración (Carga de Histórico)</div>
+    <label for="historyInput" id="historyLabel">Ingresa las decenas a la cabeza de los últimos sorteos:</label>
+    <textarea id="historyInput" placeholder="Ejemplo: 12, 45, 88, 05, 34, 90..."></textarea>
+    <button class="btn-secondary" onclick="guardarYAnalizarHistorial()">Guardar Histórico</button>
+  </div>
+
+  <div class="footer-admin-link" onclick="toggleAdminPanel()">🔒 Acceso Administrador</div>
 </div>
 
 <script>
   document.getElementById('dateInput').valueAsDate = new Date();
+
+  // Verificar si la URL contiene ?admin=1
+  const urlParams = new URLSearchParams(window.location.search);
+  let esAdmin = urlParams.get('admin') === '1';
+
+  if (esAdmin) {
+    document.getElementById('adminPanel').style.display = 'block';
+  }
+
+  function toggleAdminPanel() {
+    const p = document.getElementById('adminPanel');
+    if (p.style.display === 'block') {
+      p.style.display = 'none';
+    } else {
+      const pass = prompt("Ingresa la clave de administrador:");
+      if (pass === "1234") { // Puedes cambiar esta contraseña fácil
+        p.style.display = 'block';
+      } else if (pass !== null) {
+        alert("Clave incorrecta");
+      }
+    }
+  }
 
   function alCambiarJuego() {
     const juego = document.getElementById('gameSelect').value;
@@ -209,6 +265,10 @@
       turnoContainer.style.display = 'none';
       label.innerText = 'Ingresa las combinaciones ganadoras completas (separadas por espacio o coma):';
     }
+    cargarEstadisticasGuardadas();
+  }
+
+  function alCambiarTurno() {
     cargarEstadisticasGuardadas();
   }
 
@@ -233,6 +293,7 @@
     const val = document.getElementById('historyInput').value;
     localStorage.setItem(key, val);
     analizarFrecuencias();
+    alert("Histórico guardado correctamente.");
   }
 
   function obtenerArrayNumerosEntrada() {
@@ -253,7 +314,11 @@
     const statsBox = document.getElementById('statsContainer');
 
     if (numeros.length === 0) {
-      statsBox.innerHTML = '<div class="subtitle" style="margin-top:10px;">No hay datos guardados "A la Cabeza".</div>';
+      statsBox.innerHTML = `
+        <div class="stats-panel" style="text-align:center; color:#6c757d; font-size:13px;">
+          📊 <i>Estadísticas basadas en análisis numerológico directo de la fecha.</i>
+        </div>
+      `;
       return { calientes: [], frios: [] };
     }
 
@@ -263,19 +328,23 @@
     });
 
     const ordenados = Object.keys(conteo).sort((a, b) => conteo[b] - conteo[a]);
-    const calientes = ordenados.slice(0, 5);
-    const frios = ordenados.slice(-5).reverse();
+    const calientes = ordenados.slice(0, 4);
+    const frios = ordenados.slice(-4).reverse();
+
+    const juego = document.getElementById('gameSelect').value;
+    const tituloEstadistica = juego === 'quiniela' ? '📊 Tendencia "A la Cabeza" (Sorteos Recientes)' : '📊 Tendencias de Frecuencia (Sorteos Recientes)';
 
     statsBox.innerHTML = `
       <div class="stats-panel">
+        <div style="font-weight:bold; font-size:13px; color:var(--primary); margin-bottom:8px;">${tituloEstadistica}</div>
         <div class="grid-2">
           <div>
-            <span class="hot-badge">👑 Calientes a la Cabeza:</span><br>
-            <b>${calientes.map(n => `${n} (${conteo[n]}x)`).join(', ')}</b>
+            <span class="hot-badge">🔥 Más Frecuentes:</span><br>
+            ${calientes.map(n => `<span class="badge-chip" style="color:var(--hot);">${n} <small>(${conteo[n]}x)</small></span>`).join('')}
           </div>
           <div>
             <span class="cold-badge">❄️ Fríos / Atrasados:</span><br>
-            <b>${frios.map(n => `${n} (${conteo[n]}x)`).join(', ')}</b>
+            ${frios.map(n => `<span class="badge-chip" style="color:var(--cold);">${n} <small>(${conteo[n]}x)</small></span>`).join('')}
           </div>
         </div>
       </div>
