@@ -124,7 +124,7 @@
 
 <div class="container">
   <h1>Pirámide de la Suerte 🍀</h1>
-  <div class="subtitle">Generador de Pronósticos para Quinielas y Loterías</div>
+  <div class="subtitle">Pronósticos guiados por la Numerología de la Fecha</div>
 
   <label for="gameSelect">Selecciona el Juego / Sorteo:</label>
   <select id="gameSelect">
@@ -147,6 +147,38 @@
 
 <script>
   document.getElementById('dateInput').valueAsDate = new Date();
+
+  // Calcula el número de atracción de la fecha (Reducción Numerológica a 1 dígito)
+  function calcularNumeroAtraccion(fechaStr) {
+    const limpia = fechaStr.replace(/-/g, '');
+    let suma = limpia.split('').reduce((acc, curr) => acc + parseInt(curr), 0);
+    while (suma > 9) {
+      suma = suma.toString().split('').reduce((acc, curr) => acc + parseInt(curr), 0);
+    }
+    return suma;
+  }
+
+  // Ordena/Selecciona dando prioridad a números que resuenan con la vibración del día
+  function priorizarPorVibracion(listaNumeros, vibracion) {
+    const vibracionStr = vibracion.toString();
+    const conAtraccion = [];
+    const normales = [];
+
+    listaNumeros.forEach(num => {
+      const sumaDigitos = num.toString().split('').reduce((acc, curr) => acc + parseInt(curr), 0);
+      const sumaReducida = (sumaDigitos % 9 === 0 && sumaDigitos > 0) ? 9 : sumaDigitos % 9;
+
+      // Si el número contiene la cifra magnética o suma su valor vibracional, atrae preferencia
+      if (num.toString().includes(vibracionStr) || sumaReducida === vibracion) {
+        conAtraccion.push(num);
+      } else {
+        normales.push(num);
+      }
+    });
+
+    // Devuelve los de mayor atracción numerológica combinados con los demás
+    return [...conAtraccion, ...normales];
+  }
 
   function generarPiramide(fechaStr) {
     const limpia = fechaStr.replace(/-/g, '');
@@ -185,17 +217,16 @@
       }
     }
 
-    for (let l = 2; l <= 4; l++) {
-      let diagIzq = '', diagDer = '';
-      for (let i = 0; i < niveles.length; i++) {
-        diagIzq += niveles[i][0];
-        diagDer += niveles[i][niveles[i].length - 1];
-      }
-      for (let i = 0; i <= diagIzq.length - longitud; i++) {
-        encontrados.add(diagIzq.substring(i, i + longitud));
-        encontrados.add(diagDer.substring(i, i + longitud));
-      }
+    let diagIzq = '', diagDer = '';
+    for (let i = 0; i < niveles.length; i++) {
+      diagIzq += niveles[i][0];
+      diagDer += niveles[i][niveles[i].length - 1];
     }
+    for (let i = 0; i <= diagIzq.length - longitud; i++) {
+      encontrados.add(diagIzq.substring(i, i + longitud));
+      encontrados.add(diagDer.substring(i, i + longitud));
+    }
+
     return Array.from(encontrados);
   }
 
@@ -204,6 +235,7 @@
     const fechaVal = document.getElementById('dateInput').value;
     if (!fechaVal) return;
 
+    const vibracionDia = calcularNumeroAtraccion(fechaVal);
     const niveles = generarPiramide(fechaVal);
     
     const htmlPiramide = niveles.map(n => n.join(' ')).join('<br>');
@@ -215,23 +247,20 @@
     const digitoPunta = niveles[niveles.length - 1][0];
 
     if (juego === 'quiniela') {
-      document.getElementById('resultsTitle').innerText = 'Resultados para Quiniela';
+      document.getElementById('resultsTitle').innerText = `Pronóstico por Atracción Numerológica (Vibración ${vibracionDia})`;
 
       const candidatos2 = obtenerNumerosDePiramide(niveles, 2);
 
-      // Regla Quinielera: Es PAR si la última cifra es par (0, 2, 4, 6, 8)
       const pares = candidatos2.filter(num => parseInt(num[1]) % 2 === 0);
-
-      // Regla Quinielera: Es IMPAR si la última cifra es impar (1, 3, 5, 7, 9)
       const impares = candidatos2.filter(num => parseInt(num[1]) % 2 !== 0);
-
       const candidatos3 = obtenerNumerosDePiramide(niveles, 3);
       const candidatos4 = obtenerNumerosDePiramide(niveles, 4);
 
-      const seleccionPares = pares.slice(0, 4);
-      const seleccionImpares = impares.slice(0, 4);
-      const seleccionTernos = candidatos3.slice(0, 4);
-      const seleccionCuaternos = candidatos4.slice(0, 4);
+      // Selección fundamentada en la vibración astrológica/numerológica de la fecha
+      const seleccionPares = priorizarPorVibracion(pares, vibracionDia).slice(0, 4);
+      const seleccionImpares = priorizarPorVibracion(impares, vibracionDia).slice(0, 4);
+      const seleccionTernos = priorizarPorVibracion(candidatos3, vibracionDia).slice(0, 4);
+      const seleccionCuaternos = priorizarPorVibracion(candidatos4, vibracionDia).slice(0, 4);
 
       resBox.innerHTML = `
         <div class="grid-2">
@@ -262,16 +291,18 @@
       if (juego === 'megalotto') {
         min = 1; max = 40; nombre = 'Mega Lotto PY';
       }
-      document.getElementById('resultsTitle').innerText = `Pronóstico para ${nombre}`;
+      document.getElementById('resultsTitle').innerText = `Pronóstico Astrológico para ${nombre}`;
 
       const candidatos = obtenerNumerosDePiramide(niveles, 2);
       const validos = Array.from(new Set(
         candidatos
           .map(n => parseInt(n))
           .filter(n => n >= min && n <= max)
-      )).sort((a,b) => a - b);
+      ));
 
-      let finalNums = validos.slice(0, 6);
+      let ordenadosVibracion = priorizarPorVibracion(validos, vibracionDia);
+      let finalNums = ordenadosVibracion.slice(0, 6);
+      
       while (finalNums.length < 6) {
         let rand = Math.floor(Math.random() * (max - min + 1)) + min;
         if (!finalNums.includes(rand)) finalNums.push(rand);
@@ -282,7 +313,7 @@
 
       resBox.innerHTML = `
         <div class="card">
-          <div class="card-title">6 Números Recomendados</div>
+          <div class="card-title">6 Números Recomendados (Vibración ${vibracionDia})</div>
           <div class="card-value">${formateados.join(' - ')}</div>
         </div>
       `;
