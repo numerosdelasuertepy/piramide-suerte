@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Pirámide de la Suerte 🍀</title>
+  <title>Pirámide de la Suerte PY 🍀</title>
   <style>
     :root {
       --primary: #1b4332;
@@ -14,6 +14,7 @@
       --text: #212529;
       --hot: #e63946;
       --cold: #1d3557;
+      --gold: #d4af37;
     }
     body {
       font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
@@ -151,13 +152,13 @@
 <body>
 
 <div class="container">
-  <h1>Pirámide de la Suerte 🍀</h1>
-  <div class="subtitle">Pronósticos y Estadísticas de Loterías</div>
+  <h1>Pirámide de la Suerte PY 🍀</h1>
+  <div class="subtitle">Pronósticos e Historial de Sorteos (A la Cabeza)</div>
 
   <label for="gameSelect">Selecciona el Juego / Sorteo:</label>
   <select id="gameSelect" onchange="alCambiarJuego()">
     <option value="quiniela">Quiniela (Paraguay)</option>
-    <option value="quini6">Quini 6 (Miércoles y Domingo)</option>
+    <option value="quini6">Quini 6 (00 - 45)</option>
     <option value="megalotto">Mega Lotto PY (01 - 36)</option>
   </select>
 
@@ -176,11 +177,11 @@
   <label for="dateInput">Selecciona la Fecha:</label>
   <input type="date" id="dateInput">
 
-  <!-- MÓDULO DE HISTORIAL PARA ESTADÍSTICAS -->
-  <div class="section-title">📊 Estadísticas de Sorteos Previos</div>
-  <label for="historyInput" id="historyLabel">Ingresa los números de los últimos sorteos:</label>
-  <textarea id="historyInput" placeholder="Ejemplo: 12, 45, 88, 12, 05, 34, 12, 90..."></textarea>
-  <button class="btn-secondary" onclick="guardarYAnalizarHistorial()">Calcular Números Calientes y Fríos</button>
+  <!-- MÓDULO DE HISTORIAL A LA CABEZA -->
+  <div class="section-title">👑 Historial "A la Cabeza" (Posición 1)</div>
+  <label for="historyInput" id="historyLabel">Ingresa las decenas (2 cifras) que salieron a la cabeza en los últimos sorteos:</label>
+  <textarea id="historyInput" placeholder="Ejemplo: 12, 45, 88, 05, 34, 90..."></textarea>
+  <button class="btn-secondary" onclick="guardarYAnalizarHistorial()">Calcular Frecuencia a la Cabeza</button>
 
   <div id="statsContainer"></div>
 
@@ -203,10 +204,10 @@
 
     if (juego === 'quiniela') {
       turnoContainer.style.display = 'block';
-      label.innerText = 'Ingresa las decenas (2 cifras) de los últimos sorteos:';
+      label.innerText = 'Ingresa las decenas (2 cifras) a la cabeza de los últimos sorteos:';
     } else {
       turnoContainer.style.display = 'none';
-      label.innerText = 'Ingresa las combinaciones ganadoras (separadas por espacio o coma):';
+      label.innerText = 'Ingresa las combinaciones ganadoras completas (separadas por espacio o coma):';
     }
     cargarEstadisticasGuardadas();
   }
@@ -215,7 +216,7 @@
     const juego = document.getElementById('gameSelect').value;
     if (juego === 'quiniela') {
       const turno = document.getElementById('shiftSelect').value;
-      return `stats_quiniela_${turno}`;
+      return `stats_quiniela_cabeza_${turno}`;
     }
     return `stats_${juego}`;
   }
@@ -252,7 +253,7 @@
     const statsBox = document.getElementById('statsContainer');
 
     if (numeros.length === 0) {
-      statsBox.innerHTML = '<div class="subtitle" style="margin-top:10px;">No hay historial guardado para este filtro.</div>';
+      statsBox.innerHTML = '<div class="subtitle" style="margin-top:10px;">No hay datos guardados "A la Cabeza".</div>';
       return { calientes: [], frios: [] };
     }
 
@@ -269,11 +270,11 @@
       <div class="stats-panel">
         <div class="grid-2">
           <div>
-            <span class="hot-badge">🔥 Calientes:</span><br>
+            <span class="hot-badge">👑 Calientes a la Cabeza:</span><br>
             <b>${calientes.map(n => `${n} (${conteo[n]}x)`).join(', ')}</b>
           </div>
           <div>
-            <span class="cold-badge">❄️ Fríos:</span><br>
+            <span class="cold-badge">❄️ Fríos / Atrasados:</span><br>
             <b>${frios.map(n => `${n} (${conteo[n]}x)`).join(', ')}</b>
           </div>
         </div>
@@ -378,7 +379,7 @@
 
     if (juego === 'quiniela') {
       const turnoTexto = document.getElementById('shiftSelect').options[document.getElementById('shiftSelect').selectedIndex].text;
-      document.getElementById('resultsTitle').innerText = `Pronóstico para Quiniela (${turnoTexto}) - Vib. ${vibracionDia}`;
+      document.getElementById('resultsTitle').innerText = `Pronóstico Quiniela (${turnoTexto}) - Vib. ${vibracionDia}`;
 
       const candidatos2 = obtenerNumerosDePiramide(niveles, 2);
 
