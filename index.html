@@ -155,19 +155,31 @@
   <div class="subtitle">Pronósticos y Estadísticas de Loterías</div>
 
   <label for="gameSelect">Selecciona el Juego / Sorteo:</label>
-  <select id="gameSelect" onchange="cargarEstadisticasGuardadas()">
-    <option value="quiniela">Quiniela (Paraguay / Argentina)</option>
-    <option value="quini6">Quini 6 (00 - 45)</option>
-    <option value="megalotto">Mega Lotto PY (01 - 40)</option>
+  <select id="gameSelect" onchange="alCambiarJuego()">
+    <option value="quiniela">Quiniela (Paraguay)</option>
+    <option value="quini6">Quini 6 (Miércoles y Domingo)</option>
+    <option value="megalotto">Mega Lotto PY (01 - 36)</option>
   </select>
+
+  <!-- SELECCIÓN DE TURNO PARA QUINIELA -->
+  <div id="turnoContainer">
+    <label for="shiftSelect">Selecciona el Turno del Sorteo:</label>
+    <select id="shiftSelect" onchange="cargarEstadisticasGuardadas()">
+      <option value="general">General (Todos los turnos)</option>
+      <option value="tempranero">Tempranero (Lun a Sáb)</option>
+      <option value="matutino">Matutino (Lun a Sáb)</option>
+      <option value="vespertino">Vespertino (Lun a Dom)</option>
+      <option value="nocturno">Nocturno (Lun a Dom)</option>
+    </select>
+  </div>
 
   <label for="dateInput">Selecciona la Fecha:</label>
   <input type="date" id="dateInput">
 
   <!-- MÓDULO DE HISTORIAL PARA ESTADÍSTICAS -->
   <div class="section-title">📊 Estadísticas de Sorteos Previos</div>
-  <label for="historyInput">Ingresa/Pega los números de los últimos sorteos (separados por coma, espacio o guion):</label>
-  <textarea id="historyInput" placeholder="Ejemplo para Quiniela: 12, 45, 88, 12, 05, 34, 12, 90...&#10;Ejemplo para Quini/Lotto: 04 12 18 25 33 40, 02 11 15..."></textarea>
+  <label for="historyInput" id="historyLabel">Ingresa los números de los últimos sorteos:</label>
+  <textarea id="historyInput" placeholder="Ejemplo: 12, 45, 88, 12, 05, 34, 12, 90..."></textarea>
   <button class="btn-secondary" onclick="guardarYAnalizarHistorial()">Calcular Números Calientes y Fríos</button>
 
   <div id="statsContainer"></div>
@@ -184,9 +196,28 @@
 <script>
   document.getElementById('dateInput').valueAsDate = new Date();
 
-  // Guardar datos en el almacenamiento local del navegador
+  function alCambiarJuego() {
+    const juego = document.getElementById('gameSelect').value;
+    const turnoContainer = document.getElementById('turnoContainer');
+    const label = document.getElementById('historyLabel');
+
+    if (juego === 'quiniela') {
+      turnoContainer.style.display = 'block';
+      label.innerText = 'Ingresa las decenas (2 cifras) de los últimos sorteos:';
+    } else {
+      turnoContainer.style.display = 'none';
+      label.innerText = 'Ingresa las combinaciones ganadoras (separadas por espacio o coma):';
+    }
+    cargarEstadisticasGuardadas();
+  }
+
   function obtenerKeyJuego() {
-    return 'stats_' + document.getElementById('gameSelect').value;
+    const juego = document.getElementById('gameSelect').value;
+    if (juego === 'quiniela') {
+      const turno = document.getElementById('shiftSelect').value;
+      return `stats_quiniela_${turno}`;
+    }
+    return `stats_${juego}`;
   }
 
   function cargarEstadisticasGuardadas() {
@@ -206,11 +237,9 @@
   function obtenerArrayNumerosEntrada() {
     const texto = document.getElementById('historyInput').value;
     if (!texto.trim()) return [];
-    // Normalizar separadores
     const limpio = texto.replace(/[\n\r;,-]/g, ' ');
     const tokens = limpio.split(/\s+/).filter(t => t.length > 0);
     
-    // Convertir números a formato de dos dígitos de 00 a 99
     return tokens.map(t => {
       let num = parseInt(t);
       if (isNaN(num)) return null;
@@ -223,7 +252,7 @@
     const statsBox = document.getElementById('statsContainer');
 
     if (numeros.length === 0) {
-      statsBox.innerHTML = '<div class="subtitle" style="margin-top:100px;">No se ingresaron datos de sorteos recientes.</div>';
+      statsBox.innerHTML = '<div class="subtitle" style="margin-top:10px;">No hay historial guardado para este filtro.</div>';
       return { calientes: [], frios: [] };
     }
 
@@ -270,11 +299,9 @@
       let pesoA = 0;
       let pesoB = 0;
 
-      // Si está en la lista de números calientes suma prioridad
       if (calientes.includes(a)) pesoA += 3;
       if (calientes.includes(b)) pesoB += 3;
 
-      // Si vibra con el día suma prioridad
       if (a.includes(vibracionStr)) pesoA += 2;
       if (b.includes(vibracionStr)) pesoB += 2;
 
@@ -350,7 +377,8 @@
     const digitoPunta = niveles[niveles.length - 1][0];
 
     if (juego === 'quiniela') {
-      document.getElementById('resultsTitle').innerText = `Pronóstico Magnético (Vibración ${vibracionDia})`;
+      const turnoTexto = document.getElementById('shiftSelect').options[document.getElementById('shiftSelect').selectedIndex].text;
+      document.getElementById('resultsTitle').innerText = `Pronóstico para Quiniela (${turnoTexto}) - Vib. ${vibracionDia}`;
 
       const candidatos2 = obtenerNumerosDePiramide(niveles, 2);
 
@@ -391,7 +419,7 @@
     } else {
       let min = 0, max = 45, nombre = 'Quini 6';
       if (juego === 'megalotto') {
-        min = 1; max = 40; nombre = 'Mega Lotto PY';
+        min = 1; max = 36; nombre = 'Mega Lotto PY';
       }
       document.getElementById('resultsTitle').innerText = `Pronóstico para ${nombre}`;
 
@@ -420,7 +448,7 @@
     }
   }
 
-  cargarEstadisticasGuardadas();
+  alCambiarJuego();
   generar();
 </script>
 
