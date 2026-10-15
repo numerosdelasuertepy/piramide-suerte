@@ -12,6 +12,8 @@
       --bg: #f8f9fa;
       --card-bg: #ffffff;
       --text: #212529;
+      --hot: #e63946;
+      --cold: #1d3557;
     }
     body {
       font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
@@ -24,7 +26,7 @@
     }
     .container {
       width: 100%;
-      max-width: 500px;
+      max-width: 550px;
       background: var(--card-bg);
       padding: 25px;
       border-radius: 16px;
@@ -49,13 +51,18 @@
       margin-bottom: 5px;
       font-size: 14px;
     }
-    select, input[type="date"] {
+    select, input[type="date"], textarea {
       width: 100%;
       padding: 10px;
       border: 1px solid #ced4da;
       border-radius: 8px;
-      font-size: 15px;
+      font-size: 14px;
       box-sizing: border-box;
+      font-family: inherit;
+    }
+    textarea {
+      resize: vertical;
+      height: 70px;
     }
     button {
       width: 100%;
@@ -67,11 +74,17 @@
       font-weight: bold;
       border-radius: 8px;
       cursor: pointer;
-      margin-top: 20px;
+      margin-top: 15px;
       transition: background 0.2s;
     }
     button:hover {
       background-color: var(--secondary);
+    }
+    .btn-secondary {
+      background-color: #495057;
+      font-size: 13px;
+      padding: 8px;
+      margin-top: 8px;
     }
     .section-title {
       color: var(--primary);
@@ -80,6 +93,7 @@
       padding-bottom: 5px;
       margin-top: 25px;
       margin-bottom: 15px;
+      font-weight: bold;
     }
     .pyramid-box {
       background: #e8f5e9;
@@ -118,16 +132,30 @@
       font-weight: bold;
       color: var(--accent);
     }
+    .hot-badge {
+      color: var(--hot);
+      font-weight: bold;
+    }
+    .cold-badge {
+      color: var(--cold);
+      font-weight: bold;
+    }
+    .stats-panel {
+      background: #f1f3f5;
+      padding: 12px;
+      border-radius: 8px;
+      margin-top: 10px;
+    }
   </style>
 </head>
 <body>
 
 <div class="container">
   <h1>Pirámide de la Suerte 🍀</h1>
-  <div class="subtitle">Pronósticos guiados por la Numerología de la Fecha</div>
+  <div class="subtitle">Pronósticos y Estadísticas de Loterías</div>
 
   <label for="gameSelect">Selecciona el Juego / Sorteo:</label>
-  <select id="gameSelect">
+  <select id="gameSelect" onchange="cargarEstadisticasGuardadas()">
     <option value="quiniela">Quiniela (Paraguay / Argentina)</option>
     <option value="quini6">Quini 6 (00 - 45)</option>
     <option value="megalotto">Mega Lotto PY (01 - 40)</option>
@@ -136,7 +164,15 @@
   <label for="dateInput">Selecciona la Fecha:</label>
   <input type="date" id="dateInput">
 
-  <button onclick="generar()">Generar Pronóstico</button>
+  <!-- MÓDULO DE HISTORIAL PARA ESTADÍSTICAS -->
+  <div class="section-title">📊 Estadísticas de Sorteos Previos</div>
+  <label for="historyInput">Ingresa/Pega los números de los últimos sorteos (separados por coma, espacio o guion):</label>
+  <textarea id="historyInput" placeholder="Ejemplo para Quiniela: 12, 45, 88, 12, 05, 34, 12, 90...&#10;Ejemplo para Quini/Lotto: 04 12 18 25 33 40, 02 11 15..."></textarea>
+  <button class="btn-secondary" onclick="guardarYAnalizarHistorial()">Calcular Números Calientes y Fríos</button>
+
+  <div id="statsContainer"></div>
+
+  <button onclick="generar()">Generar Pronóstico Magnético</button>
 
   <div class="section-title">Pirámide del Día</div>
   <div id="pyramidContainer" class="pyramid-box">--</div>
@@ -148,7 +184,76 @@
 <script>
   document.getElementById('dateInput').valueAsDate = new Date();
 
-  // Calcula el número de atracción de la fecha (Reducción Numerológica a 1 dígito)
+  // Guardar datos en el almacenamiento local del navegador
+  function obtenerKeyJuego() {
+    return 'stats_' + document.getElementById('gameSelect').value;
+  }
+
+  function cargarEstadisticasGuardadas() {
+    const key = obtenerKeyJuego();
+    const guardado = localStorage.getItem(key) || '';
+    document.getElementById('historyInput').value = guardado;
+    analizarFrecuencias();
+  }
+
+  function guardarYAnalizarHistorial() {
+    const key = obtenerKeyJuego();
+    const val = document.getElementById('historyInput').value;
+    localStorage.setItem(key, val);
+    analizarFrecuencias();
+  }
+
+  function obtenerArrayNumerosEntrada() {
+    const texto = document.getElementById('historyInput').value;
+    if (!texto.trim()) return [];
+    // Normalizar separadores
+    const limpio = texto.replace(/[\n\r;,-]/g, ' ');
+    const tokens = limpio.split(/\s+/).filter(t => t.length > 0);
+    
+    // Convertir números a formato de dos dígitos de 00 a 99
+    return tokens.map(t => {
+      let num = parseInt(t);
+      if (isNaN(num)) return null;
+      return num < 10 ? '0' + num : '' + num;
+    }).filter(t => t !== null);
+  }
+
+  function analizarFrecuencias() {
+    const numeros = obtenerArrayNumerosEntrada();
+    const statsBox = document.getElementById('statsContainer');
+
+    if (numeros.length === 0) {
+      statsBox.innerHTML = '<div class="subtitle" style="margin-top:100px;">No se ingresaron datos de sorteos recientes.</div>';
+      return { calientes: [], frios: [] };
+    }
+
+    const conteo = {};
+    numeros.forEach(num => {
+      conteo[num] = (conteo[num] || 0) + 1;
+    });
+
+    const ordenados = Object.keys(conteo).sort((a, b) => conteo[b] - conteo[a]);
+    const calientes = ordenados.slice(0, 5);
+    const frios = ordenados.slice(-5).reverse();
+
+    statsBox.innerHTML = `
+      <div class="stats-panel">
+        <div class="grid-2">
+          <div>
+            <span class="hot-badge">🔥 Calientes:</span><br>
+            <b>${calientes.map(n => `${n} (${conteo[n]}x)`).join(', ')}</b>
+          </div>
+          <div>
+            <span class="cold-badge">❄️ Fríos:</span><br>
+            <b>${frios.map(n => `${n} (${conteo[n]}x)`).join(', ')}</b>
+          </div>
+        </div>
+      </div>
+    `;
+
+    return { calientes, frios };
+  }
+
   function calcularNumeroAtraccion(fechaStr) {
     const limpia = fechaStr.replace(/-/g, '');
     let suma = limpia.split('').reduce((acc, curr) => acc + parseInt(curr), 0);
@@ -158,26 +263,23 @@
     return suma;
   }
 
-  // Ordena/Selecciona dando prioridad a números que resuenan con la vibración del día
-  function priorizarPorVibracion(listaNumeros, vibracion) {
+  function priorizarPorVibracionYEstadisticas(listaNumeros, vibracion, calientes) {
     const vibracionStr = vibracion.toString();
-    const conAtraccion = [];
-    const normales = [];
+    
+    return listaNumeros.sort((a, b) => {
+      let pesoA = 0;
+      let pesoB = 0;
 
-    listaNumeros.forEach(num => {
-      const sumaDigitos = num.toString().split('').reduce((acc, curr) => acc + parseInt(curr), 0);
-      const sumaReducida = (sumaDigitos % 9 === 0 && sumaDigitos > 0) ? 9 : sumaDigitos % 9;
+      // Si está en la lista de números calientes suma prioridad
+      if (calientes.includes(a)) pesoA += 3;
+      if (calientes.includes(b)) pesoB += 3;
 
-      // Si el número contiene la cifra magnética o suma su valor vibracional, atrae preferencia
-      if (num.toString().includes(vibracionStr) || sumaReducida === vibracion) {
-        conAtraccion.push(num);
-      } else {
-        normales.push(num);
-      }
+      // Si vibra con el día suma prioridad
+      if (a.includes(vibracionStr)) pesoA += 2;
+      if (b.includes(vibracionStr)) pesoB += 2;
+
+      return pesoB - pesoA;
     });
-
-    // Devuelve los de mayor atracción numerológica combinados con los demás
-    return [...conAtraccion, ...normales];
   }
 
   function generarPiramide(fechaStr) {
@@ -235,6 +337,7 @@
     const fechaVal = document.getElementById('dateInput').value;
     if (!fechaVal) return;
 
+    const { calientes } = analizarFrecuencias();
     const vibracionDia = calcularNumeroAtraccion(fechaVal);
     const niveles = generarPiramide(fechaVal);
     
@@ -247,7 +350,7 @@
     const digitoPunta = niveles[niveles.length - 1][0];
 
     if (juego === 'quiniela') {
-      document.getElementById('resultsTitle').innerText = `Pronóstico por Atracción Numerológica (Vibración ${vibracionDia})`;
+      document.getElementById('resultsTitle').innerText = `Pronóstico Magnético (Vibración ${vibracionDia})`;
 
       const candidatos2 = obtenerNumerosDePiramide(niveles, 2);
 
@@ -256,11 +359,10 @@
       const candidatos3 = obtenerNumerosDePiramide(niveles, 3);
       const candidatos4 = obtenerNumerosDePiramide(niveles, 4);
 
-      // Selección fundamentada en la vibración astrológica/numerológica de la fecha
-      const seleccionPares = priorizarPorVibracion(pares, vibracionDia).slice(0, 4);
-      const seleccionImpares = priorizarPorVibracion(impares, vibracionDia).slice(0, 4);
-      const seleccionTernos = priorizarPorVibracion(candidatos3, vibracionDia).slice(0, 4);
-      const seleccionCuaternos = priorizarPorVibracion(candidatos4, vibracionDia).slice(0, 4);
+      const seleccionPares = priorizarPorVibracionYEstadisticas(pares, vibracionDia, calientes).slice(0, 4);
+      const seleccionImpares = priorizarPorVibracionYEstadisticas(impares, vibracionDia, calientes).slice(0, 4);
+      const seleccionTernos = priorizarPorVibracionYEstadisticas(candidatos3, vibracionDia, calientes).slice(0, 4);
+      const seleccionCuaternos = priorizarPorVibracionYEstadisticas(candidatos4, vibracionDia, calientes).slice(0, 4);
 
       resBox.innerHTML = `
         <div class="grid-2">
@@ -291,35 +393,34 @@
       if (juego === 'megalotto') {
         min = 1; max = 40; nombre = 'Mega Lotto PY';
       }
-      document.getElementById('resultsTitle').innerText = `Pronóstico Astrológico para ${nombre}`;
+      document.getElementById('resultsTitle').innerText = `Pronóstico para ${nombre}`;
 
       const candidatos = obtenerNumerosDePiramide(niveles, 2);
       const validos = Array.from(new Set(
         candidatos
           .map(n => parseInt(n))
           .filter(n => n >= min && n <= max)
-      ));
+      )).map(n => n < 10 ? '0' + n : '' + n);
 
-      let ordenadosVibracion = priorizarPorVibracion(validos, vibracionDia);
-      let finalNums = ordenadosVibracion.slice(0, 6);
+      let finalNums = priorizarPorVibracionYEstadisticas(validos, vibracionDia, calientes).slice(0, 6);
       
       while (finalNums.length < 6) {
         let rand = Math.floor(Math.random() * (max - min + 1)) + min;
-        if (!finalNums.includes(rand)) finalNums.push(rand);
+        let randStr = rand < 10 ? '0' + rand : '' + rand;
+        if (!finalNums.includes(randStr)) finalNums.push(randStr);
       }
-      finalNums.sort((a,b) => a - b);
-
-      const formateados = finalNums.map(n => n < 10 ? '0' + n : '' + n);
+      finalNums.sort((a,b) => parseInt(a) - parseInt(b));
 
       resBox.innerHTML = `
         <div class="card">
-          <div class="card-title">6 Números Recomendados (Vibración ${vibracionDia})</div>
-          <div class="card-value">${formateados.join(' - ')}</div>
+          <div class="card-title">6 Números Recomendados</div>
+          <div class="card-value">${finalNums.join(' - ')}</div>
         </div>
       `;
     }
   }
 
+  cargarEstadisticasGuardadas();
   generar();
 </script>
 
