@@ -49,11 +49,11 @@
     label {
       font-weight: 600;
       display: block;
-      margin-top: 15px;
+      margin-top: 12px;
       margin-bottom: 5px;
       font-size: 14px;
     }
-    select, input[type="date"], textarea {
+    select, input[type="date"], input[type="text"], textarea {
       width: 100%;
       padding: 10px;
       border: 1px solid #ced4da;
@@ -61,10 +61,6 @@
       font-size: 14px;
       box-sizing: border-box;
       font-family: inherit;
-    }
-    textarea {
-      resize: vertical;
-      height: 70px;
     }
     button {
       width: 100%;
@@ -87,6 +83,14 @@
       font-size: 13px;
       padding: 8px;
       margin-top: 8px;
+    }
+    .btn-danger {
+      background-color: #d90429;
+      font-size: 11px;
+      padding: 4px 8px;
+      width: auto;
+      margin-top: 0;
+      border-radius: 4px;
     }
     .section-title {
       color: var(--primary);
@@ -153,8 +157,8 @@
     }
     .admin-panel {
       display: none;
-      background: #fff3cd;
-      border: 1px solid #ffeeba;
+      background: #fff8e1;
+      border: 1px solid #ffe082;
       padding: 15px;
       border-radius: 10px;
       margin-top: 20px;
@@ -176,6 +180,20 @@
       color: #adb5bd;
       cursor: pointer;
     }
+    .history-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 10px;
+      font-size: 12px;
+    }
+    .history-table th, .history-table td {
+      border: 1px solid #dee2e6;
+      padding: 6px;
+      text-align: center;
+    }
+    .history-table th {
+      background-color: #e9ecef;
+    }
   </style>
 </head>
 <body>
@@ -187,11 +205,11 @@
   <label for="gameSelect">Selecciona el Juego / Sorteo:</label>
   <select id="gameSelect" onchange="alCambiarJuego()">
     <option value="quiniela">Quiniela (Paraguay)</option>
-    <option value="quini6">Quini 6 (00 - 45)</option>
-    <option value="megalotto">Mega Lotto PY (01 - 36)</option>
+    <option value="quini6">Quini 6 (Miércoles y Domingo)</option>
+    <option value="megalotto">Mega Lotto PY (Miércoles y Domingo)</option>
   </select>
 
-  <!-- SELECCIÓN DE TURNO PARA QUINIELA -->
+  <!-- SELECCIÓN DE TURNO PARA QUINIELA (VISTA PÚBLICA) -->
   <div id="turnoContainer">
     <label for="shiftSelect">Selecciona el Turno del Sorteo:</label>
     <select id="shiftSelect" onchange="alCambiarTurno()">
@@ -206,7 +224,7 @@
   <label for="dateInput">Selecciona la Fecha:</label>
   <input type="date" id="dateInput">
 
-  <!-- VISTA PÚBLICA PARA APOSTADORES: RESUMEN DE ESTADÍSTICAS -->
+  <!-- VISTA PÚBLICA PARA APOSTADORES -->
   <div id="statsContainer"></div>
 
   <button onclick="generar()">Generar Pronóstico Magnético</button>
@@ -217,12 +235,37 @@
   <div id="resultsTitle" class="section-title">Resultados</div>
   <div id="resultsContainer"></div>
 
-  <!-- PANEL OCULTO SOLO PARA ADMINISTRACIÓN / CARGA DE DATOS -->
+  <!-- PANEL ESTRUCTURADO DE ADMINISTRACIÓN -->
   <div id="adminPanel" class="admin-panel">
-    <div style="font-weight:bold; color:#856404; margin-bottom:10px;">🔒 Panel de Administración (Carga de Histórico)</div>
-    <label for="historyInput" id="historyLabel">Ingresa las decenas a la cabeza de los últimos sorteos:</label>
-    <textarea id="historyInput" placeholder="Ejemplo: 12, 45, 88, 05, 34, 90..."></textarea>
-    <button class="btn-secondary" onclick="guardarYAnalizarHistorial()">Guardar Histórico</button>
+    <div style="font-weight:bold; color:#856404; margin-bottom:10px;">🔒 Panel de Carga Oficial (Administrador)</div>
+    
+    <label for="adminGameSelect">Juego a Cargar:</label>
+    <select id="adminGameSelect" onchange="actualizarFormularioAdmin()">
+      <option value="quiniela">Quiniela (Paraguay)</option>
+      <option value="quini6">Quini 6</option>
+      <option value="megalotto">Mega Lotto PY</option>
+    </select>
+
+    <label for="adminDrawDate">Fecha del Sorteo:</label>
+    <input type="date" id="adminDrawDate">
+
+    <div id="adminShiftBox">
+      <label for="adminDrawShift">Turno del Sorteo:</label>
+      <select id="adminDrawShift">
+        <option value="tempranero">Tempranero</option>
+        <option value="matutino">Matutino</option>
+        <option value="vespertino">Vespertino</option>
+        <option value="nocturno">Nocturno</option>
+      </select>
+    </div>
+
+    <label for="adminDrawResult" id="adminResultLabel">Número a la Cabeza (2 cifras):</label>
+    <input type="text" id="adminDrawResult" placeholder="Ejemplo: 45">
+
+    <button class="btn-secondary" onclick="guardarSorteoAdmin()"> Registrar Sorteo</button>
+
+    <div style="font-weight:bold; font-size:12px; margin-top:15px; color:#495057;">📋 ÚLTIMOS SORTEOS CARGADOS:</div>
+    <div id="adminHistoryTable"></div>
   </div>
 
   <div class="footer-admin-link" onclick="toggleAdminPanel()">🔒 Acceso Administrador</div>
@@ -230,12 +273,10 @@
 
 <script>
   document.getElementById('dateInput').valueAsDate = new Date();
+  document.getElementById('adminDrawDate').valueAsDate = new Date();
 
-  // Verificar si la URL contiene ?admin=1
   const urlParams = new URLSearchParams(window.location.search);
-  let esAdmin = urlParams.get('admin') === '1';
-
-  if (esAdmin) {
+  if (urlParams.get('admin') === '1') {
     document.getElementById('adminPanel').style.display = 'block';
   }
 
@@ -245,78 +286,181 @@
       p.style.display = 'none';
     } else {
       const pass = prompt("Ingresa la clave de administrador:");
-      if (pass === "1234") { // Puedes cambiar esta contraseña fácil
+      if (pass === "1234") {
         p.style.display = 'block';
+        actualizarFormularioAdmin();
       } else if (pass !== null) {
         alert("Clave incorrecta");
       }
     }
   }
 
+  function actualizarFormularioAdmin() {
+    const juego = document.getElementById('adminGameSelect').value;
+    const shiftBox = document.getElementById('adminShiftBox');
+    const resultLabel = document.getElementById('adminResultLabel');
+    const resultInput = document.getElementById('adminDrawResult');
+
+    if (juego === 'quiniela') {
+      shiftBox.style.display = 'block';
+      resultLabel.innerText = 'Número a la Cabeza (2 cifras):';
+      resultInput.placeholder = 'Ejemplo: 45';
+    } else {
+      shiftBox.style.display = 'none';
+      resultLabel.innerText = '6 Números Ganadores (separados por espacio o coma):';
+      resultInput.placeholder = 'Ejemplo: 04 12 18 25 31 36';
+    }
+    renderizarTablaAdmin();
+  }
+
+  function obtenerLlaveStorage(juego, turno) {
+    if (juego === 'quiniela') {
+      return `sorteos_quiniela_${turno}`;
+    }
+    return `sorteos_${juego}`;
+  }
+
+  function guardarSorteoAdmin() {
+    const juego = document.getElementById('adminGameSelect').value;
+    const fecha = document.getElementById('adminDrawDate').value;
+    const turno = document.getElementById('adminDrawShift').value;
+    const resultadoRaw = document.getElementById('adminDrawResult').value.trim();
+
+    if (!fecha || !resultadoRaw) {
+      alert("Por favor completa la fecha y el resultado del sorteo.");
+      return;
+    }
+
+    const key = obtenerLlaveStorage(juego, turno);
+    let lista = JSON.parse(localStorage.getItem(key) || '[]');
+
+    lista.unshift({
+      id: Date.now(),
+      fecha: fecha,
+      turno: juego === 'quiniela' ? turno : 'N/A',
+      resultado: resultadoRaw
+    });
+
+    // Guardar máximo los últimos 30 sorteos
+    lista = lista.slice(0, 30);
+    localStorage.setItem(key, JSON.stringify(lista));
+
+    document.getElementById('adminDrawResult').value = '';
+    alert("Sorteo registrado exitosamente.");
+    
+    renderizarTablaAdmin();
+    analizarFrecuencias();
+  }
+
+  function eliminarSorteoAdmin(key, id) {
+    let lista = JSON.parse(localStorage.getItem(key) || '[]');
+    lista = lista.filter(item => item.id !== id);
+    localStorage.setItem(key, JSON.stringify(lista));
+    renderizarTablaAdmin();
+    analizarFrecuencias();
+  }
+
+  function renderizarTablaAdmin() {
+    const juego = document.getElementById('adminGameSelect').value;
+    const turno = document.getElementById('adminDrawShift').value;
+    const key = obtenerLlaveStorage(juego, turno);
+    const lista = JSON.parse(localStorage.getItem(key) || '[]');
+    const container = document.getElementById('adminHistoryTable');
+
+    if (lista.length === 0) {
+      container.innerHTML = '<div style="font-size:11px; color:#6c757d; margin-top:5px;">No hay sorteos registrados para este filtro.</div>';
+      return;
+    }
+
+    let html = `
+      <table class="history-table">
+        <thead>
+          <tr>
+            <th>Fecha</th>
+            ${juego === 'quiniela' ? '<th>Turno</th>' : ''}
+            <th>Resultado</th>
+            <th>Acción</th>
+          </tr>
+        </thead>
+        <tbody>
+    `;
+
+    lista.forEach(item => {
+      html += `
+        <tr>
+          <td>${item.fecha}</td>
+          ${juego === 'quiniela' ? `<td>${item.turno}</td>` : ''}
+          <td><b>${item.resultado}</b></td>
+          <td><button class="btn-danger" onclick="eliminarSorteoAdmin('${key}', ${item.id})">X</button></td>
+        </tr>
+      `;
+    });
+
+    html += '</tbody></table>';
+    container.innerHTML = html;
+  }
+
   function alCambiarJuego() {
     const juego = document.getElementById('gameSelect').value;
     const turnoContainer = document.getElementById('turnoContainer');
-    const label = document.getElementById('historyLabel');
 
     if (juego === 'quiniela') {
       turnoContainer.style.display = 'block';
-      label.innerText = 'Ingresa las decenas (2 cifras) a la cabeza de los últimos sorteos:';
     } else {
       turnoContainer.style.display = 'none';
-      label.innerText = 'Ingresa las combinaciones ganadoras completas (separadas por espacio o coma):';
     }
-    cargarEstadisticasGuardadas();
+    analizarFrecuencias();
   }
 
   function alCambiarTurno() {
-    cargarEstadisticasGuardadas();
+    analizarFrecuencias();
   }
 
-  function obtenerKeyJuego() {
+  function obtenerNumerosProcesadosPublicos() {
     const juego = document.getElementById('gameSelect').value;
+    const turno = document.getElementById('shiftSelect').value;
+
+    let llavesAProcesar = [];
     if (juego === 'quiniela') {
-      const turno = document.getElementById('shiftSelect').value;
-      return `stats_quiniela_cabeza_${turno}`;
+      if (turno === 'general') {
+        llavesAProcesar = [
+          'sorteos_quiniela_tempranero',
+          'sorteos_quiniela_matutino',
+          'sorteos_quiniela_vespertino',
+          'sorteos_quiniela_nocturno'
+        ];
+      } else {
+        llavesAProcesar = [`sorteos_quiniela_${turno}`];
+      }
+    } else {
+      llavesAProcesar = [`sorteos_${juego}`];
     }
-    return `stats_${juego}`;
-  }
 
-  function cargarEstadisticasGuardadas() {
-    const key = obtenerKeyJuego();
-    const guardado = localStorage.getItem(key) || '';
-    document.getElementById('historyInput').value = guardado;
-    analizarFrecuencias();
-  }
+    let todosResultados = [];
+    llavesAProcesar.forEach(key => {
+      const lista = JSON.parse(localStorage.getItem(key) || '[]');
+      lista.forEach(item => {
+        const tokens = item.resultado.replace(/[\n\r;,-]/g, ' ').split(/\s+/).filter(t => t.length > 0);
+        tokens.forEach(t => {
+          let num = parseInt(t);
+          if (!isNaN(num)) {
+            todosResultados.push(num < 10 ? '0' + num : '' + num);
+          }
+        });
+      });
+    });
 
-  function guardarYAnalizarHistorial() {
-    const key = obtenerKeyJuego();
-    const val = document.getElementById('historyInput').value;
-    localStorage.setItem(key, val);
-    analizarFrecuencias();
-    alert("Histórico guardado correctamente.");
-  }
-
-  function obtenerArrayNumerosEntrada() {
-    const texto = document.getElementById('historyInput').value;
-    if (!texto.trim()) return [];
-    const limpio = texto.replace(/[\n\r;,-]/g, ' ');
-    const tokens = limpio.split(/\s+/).filter(t => t.length > 0);
-    
-    return tokens.map(t => {
-      let num = parseInt(t);
-      if (isNaN(num)) return null;
-      return num < 10 ? '0' + num : '' + num;
-    }).filter(t => t !== null);
+    return todosResultados;
   }
 
   function analizarFrecuencias() {
-    const numeros = obtenerArrayNumerosEntrada();
+    const numeros = obtenerNumerosProcesadosPublicos();
     const statsBox = document.getElementById('statsContainer');
 
     if (numeros.length === 0) {
       statsBox.innerHTML = `
         <div class="stats-panel" style="text-align:center; color:#6c757d; font-size:13px;">
-          📊 <i>Estadísticas basadas en análisis numerológico directo de la fecha.</i>
+          📊 <i>Análisis listo para recibir el historial de sorteos oficiales.</i>
         </div>
       `;
       return { calientes: [], frios: [] };
@@ -332,7 +476,7 @@
     const frios = ordenados.slice(-4).reverse();
 
     const juego = document.getElementById('gameSelect').value;
-    const tituloEstadistica = juego === 'quiniela' ? '📊 Tendencia "A la Cabeza" (Sorteos Recientes)' : '📊 Tendencias de Frecuencia (Sorteos Recientes)';
+    const tituloEstadistica = juego === 'quiniela' ? '📊 Tendencia "A la Cabeza" (Sorteos Registrados)' : '📊 Tendencias de Frecuencia Oficiales';
 
     statsBox.innerHTML = `
       <div class="stats-panel">
