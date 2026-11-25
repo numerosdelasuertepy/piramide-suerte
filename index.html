@@ -14,7 +14,7 @@
       --text: #212529;
       --hot: #e63946;
       --cold: #1d3557;
-      --gold: #d4af37;
+      --gold: #b58300;
     }
     body {
       font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
@@ -126,6 +126,14 @@
       text-align: center;
       margin-bottom: 10px;
     }
+    .card-redoblona {
+      background: #fffdf5;
+      border: 1px solid #ffe082;
+      border-radius: 8px;
+      padding: 12px;
+      text-align: center;
+      margin-bottom: 10px;
+    }
     .card-title {
       font-size: 12px;
       font-weight: bold;
@@ -137,6 +145,12 @@
       font-size: 20px;
       font-weight: bold;
       color: var(--accent);
+      letter-spacing: 1px;
+    }
+    .card-value-gold {
+      font-size: 19px;
+      font-weight: bold;
+      color: var(--gold);
       letter-spacing: 1px;
     }
     .hot-badge {
@@ -201,6 +215,11 @@
       margin-top: 4px;
       display: none;
     }
+    .helper-hint {
+      font-size: 11px;
+      color: #6c757d;
+      margin-top: 4px;
+    }
   </style>
 </head>
 <body>
@@ -262,8 +281,9 @@
       <select id="adminSubSelect" onchange="renderizarTablaAdmin()"></select>
     </div>
 
-    <label for="adminDrawResult" id="adminResultLabel">Número a la Cabeza (3 cifras):</label>
-    <input type="text" id="adminDrawResult" placeholder="Ejemplo: 745">
+    <label for="adminDrawResult" id="adminResultLabel">Premios 1° al 7° (3 cifras, 1° = Cabeza):</label>
+    <input type="text" id="adminDrawResult" placeholder="Ej: 745 123 890 456 012 334 981">
+    <div id="adminHelperHint" class="helper-hint">Ingresa los 7 números de 3 cifras en orden del 1° al 7° premio separados por espacio (el 1° se toma como Cabeza).</div>
 
     <button class="btn-secondary" onclick="guardarSorteoAdmin()">Registrar Sorteo</button>
 
@@ -339,6 +359,7 @@
     const subSelect = document.getElementById('adminSubSelect');
     const resultLabel = document.getElementById('adminResultLabel');
     const resultInput = document.getElementById('adminDrawResult');
+    const helperHint = document.getElementById('adminHelperHint');
 
     if (juego === 'quiniela') {
       subLabel.innerText = 'Turno del Sorteo:';
@@ -348,8 +369,9 @@
         <option value="vespertino">Vespertino</option>
         <option value="nocturno">Nocturno</option>
       `;
-      resultLabel.innerText = 'Número a la Cabeza (3 cifras):';
-      resultInput.placeholder = 'Ejemplo: 745';
+      resultLabel.innerText = 'Premios 1° al 7° (3 cifras, 1° = Cabeza):';
+      resultInput.placeholder = 'Ej: 745 123 890 456 012 334 981';
+      helperHint.style.display = 'block';
     } else if (juego === 'megalotto') {
       subLabel.innerText = 'Modalidad Extraída:';
       subSelect.innerHTML = `
@@ -359,6 +381,7 @@
       `;
       resultLabel.innerText = '6 Números Ganadores (01 al 36):';
       resultInput.placeholder = 'Ejemplo: 04 12 18 25 31 36';
+      helperHint.style.display = 'none';
     } else if (juego === 'quini6') {
       subLabel.innerText = 'Modalidad Extraída:';
       subSelect.innerHTML = `
@@ -369,6 +392,7 @@
       `;
       resultLabel.innerText = '6 Números Ganadores (00 al 45):';
       resultInput.placeholder = 'Ejemplo: 02 11 19 24 33 41';
+      helperHint.style.display = 'none';
     }
 
     validarDiaSorteoAdmin();
@@ -435,8 +459,8 @@
         <thead>
           <tr>
             <th>Fecha</th>
-            <th>Modalidad/Turno</th>
-            <th>Resultado</th>
+            <th>Turno</th>
+            <th>1° Cabeza / Premios 1-7</th>
             <th>Acción</th>
           </tr>
         </thead>
@@ -444,11 +468,16 @@
     `;
 
     lista.forEach(item => {
+      const tokens = item.resultado.replace(/[\n\r;,-]/g, ' ').split(/\s+/).filter(t => t.length > 0);
+      let displayRes = item.resultado;
+      if (juego === 'quiniela' && tokens.length > 1) {
+        displayRes = `<span style="color:#d90429;">1°: ${tokens[0]}</span> | <small>${tokens.slice(1, 7).join(' ')}</small>`;
+      }
       html += `
         <tr>
           <td>${item.fecha}</td>
           <td>${item.sub}</td>
-          <td><b>${item.resultado}</b></td>
+          <td><b>${displayRes}</b></td>
           <td><button class="btn-danger" onclick="eliminarSorteoAdmin('${key}', ${item.id})">X</button></td>
         </tr>
       `;
@@ -458,7 +487,7 @@
     container.innerHTML = html;
   }
 
-  function obtenerNumerosProcesadosPublicos() {
+  function obtenerDatosProcesadosPublicos() {
     const juego = document.getElementById('gameSelect').value;
     let llavesAProcesar = [];
 
@@ -476,45 +505,54 @@
     }
 
     let todosResultados = [];
+    let zonaRedoblona1a7 = [];
+
     llavesAProcesar.forEach(key => {
       const lista = JSON.parse(localStorage.getItem(key) || '[]');
       lista.forEach(item => {
         const tokens = item.resultado.replace(/[\n\r;,-]/g, ' ').split(/\s+/).filter(t => t.length > 0);
-        tokens.forEach(t => {
-          let limpio = t.replace(/\D/g, '');
-          if (limpio.length > 0) {
-            if (juego === 'quiniela') {
+        if (juego === 'quiniela') {
+          tokens.slice(0, 7).forEach((t, idx) => {
+            let limpio = t.replace(/\D/g, '');
+            if (limpio.length > 0) {
               let ambo = limpio.length >= 2 ? limpio.slice(-2) : '0' + limpio;
-              todosResultados.push(ambo);
-            } else {
-              let num = parseInt(limpio, 10);
-              if (!isNaN(num)) {
-                todosResultados.push(num < 10 ? '0' + num : '' + num);
+              zonaRedoblona1a7.push(ambo);
+              if (idx === 0) {
+                todosResultados.push(ambo); // 1° premio = A la Cabeza
               }
             }
-          }
-        });
+          });
+        } else {
+          tokens.forEach(t => {
+            let limpio = t.replace(/\D/g, '');
+            let num = parseInt(limpio, 10);
+            if (!isNaN(num)) {
+              todosResultados.push(num < 10 ? '0' + num : '' + num);
+            }
+          });
+        }
       });
     });
 
-    return todosResultados;
+    return { principales: todosResultados, zona1a7: zonaRedoblona1a7 };
   }
 
   function analizarFrecuencias() {
-    const numeros = obtenerNumerosProcesadosPublicos();
+    const { principales, zona1a7 } = obtenerDatosProcesadosPublicos();
     const statsBox = document.getElementById('statsContainer');
+    const juego = document.getElementById('gameSelect').value;
 
-    if (numeros.length === 0) {
+    if (principales.length === 0) {
       statsBox.innerHTML = `
         <div class="stats-panel" style="text-align:center; color:#6c757d; font-size:13px;">
           📊 <i>Análisis listo para recibir el historial de sorteos oficiales.</i>
         </div>
       `;
-      return { calientes: [], frios: [] };
+      return { calientes: [], frios: [], calientes1a7: [] };
     }
 
     const conteo = {};
-    numeros.forEach(num => {
+    principales.forEach(num => {
       conteo[num] = (conteo[num] || 0) + 1;
     });
 
@@ -522,8 +560,25 @@
     const calientes = ordenados.slice(0, 5);
     const frios = ordenados.slice(-5).reverse();
 
-    const juego = document.getElementById('gameSelect').value;
-    const tituloEstadistica = juego === 'quiniela' ? '📊 Tendencia "A la Cabeza"' : '📊 Tendencia de Frecuencia Unificada (Todas las Modalidades)';
+    let calientes1a7 = [];
+    let htmlRedoblonaStats = '';
+
+    if (juego === 'quiniela' && zona1a7.length > 0) {
+      const conteo1a7 = {};
+      zona1a7.forEach(num => {
+        conteo1a7[num] = (conteo1a7[num] || 0) + 1;
+      });
+      calientes1a7 = Object.keys(conteo1a7).sort((a, b) => conteo1a7[b] - conteo1a7[a]).slice(0, 6);
+
+      htmlRedoblonaStats = `
+        <div style="margin-top:10px; padding-top:8px; border-top:1px dashed #ced4da;">
+          <span style="color:var(--gold); font-weight:bold; font-size:13px;">🎯 Ambos Fuertes en Premios 1° al 7° (Zona Redoblona):</span><br>
+          ${calientes1a7.map(n => `<span class="badge-chip" style="color:var(--gold); border-color:#ffe082;">${n} <small>(${conteo1a7[n]}x)</small></span>`).join('')}
+        </div>
+      `;
+    }
+
+    const tituloEstadistica = juego === 'quiniela' ? '📊 Tendencia "A la Cabeza" (1° Premio)' : '📊 Tendencia de Frecuencia Unificada (Todas las Modalidades)';
 
     statsBox.innerHTML = `
       <div class="stats-panel">
@@ -538,10 +593,11 @@
             ${frios.map(n => `<span class="badge-chip" style="color:var(--cold);">${n} <small>(${conteo[n]}x)</small></span>`).join('')}
           </div>
         </div>
+        ${htmlRedoblonaStats}
       </div>
     `;
 
-    return { calientes, frios };
+    return { calientes, frios, calientes1a7 };
   }
 
   function calcularNumeroAtraccion(fechaStr) {
@@ -553,15 +609,18 @@
     return suma;
   }
 
-  function priorizarPorVibracionYEstadisticas(listaNumeros, vibracion, calientes) {
+  function priorizarPorVibracionYEstadisticas(listaNumeros, vibracion, calientes, calientesSecundarios = []) {
     const vibracionStr = vibracion.toString();
     
     return listaNumeros.sort((a, b) => {
       let pesoA = 0;
       let pesoB = 0;
 
-      if (calientes.includes(a)) pesoA += 3;
-      if (calientes.includes(b)) pesoB += 3;
+      if (calientes.includes(a)) pesoA += 4;
+      if (calientes.includes(b)) pesoB += 4;
+
+      if (calientesSecundarios.includes(a)) pesoA += 2;
+      if (calientesSecundarios.includes(b)) pesoB += 2;
 
       if (a.includes(vibracionStr)) pesoA += 2;
       if (b.includes(vibracionStr)) pesoB += 2;
@@ -688,7 +747,7 @@
     const fechaVal = document.getElementById('dateInput').value;
     if (!fechaVal) return;
 
-    const { calientes } = analizarFrecuencias();
+    const { calientes, calientes1a7 } = analizarFrecuencias();
     const vibracionDia = calcularNumeroAtraccion(fechaVal);
     const niveles = generarPiramide(fechaVal);
     
@@ -711,10 +770,20 @@
       const candidatos3 = obtenerNumerosDePiramide(niveles, 3);
       const candidatos4 = obtenerNumerosDePiramide(niveles, 4);
 
-      const seleccionPares = priorizarPorVibracionYEstadisticas(pares, vibracionDia, calientes).slice(0, 4);
-      const seleccionImpares = priorizarPorVibracionYEstadisticas(impares, vibracionDia, calientes).slice(0, 4);
-      const seleccionTernos = priorizarPorVibracionYEstadisticas(candidatos3, vibracionDia, calientes).slice(0, 4);
-      const seleccionCuaternos = priorizarPorVibracionYEstadisticas(candidatos4, vibracionDia, calientes).slice(0, 4);
+      const seleccionPares = priorizarPorVibracionYEstadisticas([...pares], vibracionDia, calientes, calientes1a7).slice(0, 4);
+      const seleccionImpares = priorizarPorVibracionYEstadisticas([...impares], vibracionDia, calientes, calientes1a7).slice(0, 4);
+      const seleccionTernos = priorizarPorVibracionYEstadisticas([...candidatos3], vibracionDia, calientes).slice(0, 4);
+      const seleccionCuaternos = priorizarPorVibracionYEstadisticas([...candidatos4], vibracionDia, calientes).slice(0, 4);
+
+      // Generar parejas sugeridas para Redoblona (1 a 7) cruzando pirámide + frecuencia 1 a 7
+      const poolRedoblona = priorizarPorVibracionYEstadisticas([...candidatos2], vibracionDia, calientes1a7, calientes);
+      let parejasRedoblona = [];
+      if (poolRedoblona.length >= 4) {
+        parejasRedoblona.push(`${poolRedoblona[0]} con ${poolRedoblona[1]}`);
+        parejasRedoblona.push(`${poolRedoblona[2]} con ${poolRedoblona[3]}`);
+      } else if (poolRedoblona.length >= 2) {
+        parejasRedoblona.push(`${poolRedoblona[0]} con ${poolRedoblona[1]}`);
+      }
 
       resBox.innerHTML = `
         <div class="grid-2">
@@ -730,6 +799,10 @@
         <div class="card">
           <div class="card-title">Ambos Impares</div>
           <div class="card-value">${seleccionImpares.join(' - ') || 'N/A'}</div>
+        </div>
+        <div class="card-redoblona">
+          <div class="card-title" style="color:#856404;">🎯 Redoblonas Sugeridas (1° al 7°)</div>
+          <div class="card-value-gold">${parejasRedoblona.join('  |  ') || 'N/A'}</div>
         </div>
         <div class="card">
           <div class="card-title">Ternos (3 Cifras)</div>
