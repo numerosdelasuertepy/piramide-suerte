@@ -148,11 +148,10 @@
       letter-spacing: 1px;
     }
     .card-value-gold {
-      font-size: 17px;
+      font-size: 19px;
       font-weight: bold;
       color: var(--gold);
-      letter-spacing: 0.5px;
-      line-height: 1.45;
+      letter-spacing: 1px;
     }
     .card-sub {
       font-size: 12px;
@@ -304,6 +303,7 @@
   document.getElementById('dateInput').valueAsDate = new Date();
   document.getElementById('adminDrawDate').valueAsDate = new Date();
 
+  // Tabla de equivalencias: 0-5, 1-6, 2-7, 3-8, 4-9
   const EQUIVALENCIAS_DIGITO = {
     0: 5, 5: 0,
     1: 6, 6: 1,
@@ -315,33 +315,33 @@
   function obtenerEquivalente(numStr) {
     return String(numStr)
       .split('')
-      .map(function(ch) {
-        var d = parseInt(ch, 10);
+      .map(ch => {
+        const d = parseInt(ch, 10);
         return isNaN(d) ? ch : String(EQUIVALENCIAS_DIGITO[d]);
       })
       .join('');
   }
 
   function obtenerSetEquivalentes(listaNumeros) {
-    var eqSet = new Set();
-    listaNumeros.forEach(function(num) {
+    const eqSet = new Set();
+    listaNumeros.forEach(num => {
       eqSet.add(obtenerEquivalente(num));
     });
     return Array.from(eqSet);
   }
 
-  var urlParams = new URLSearchParams(window.location.search);
+  const urlParams = new URLSearchParams(window.location.search);
   if (urlParams.get('admin') === '1') {
     document.getElementById('adminPanel').style.display = 'block';
     actualizarFormularioAdmin();
   }
 
   function toggleAdminPanel() {
-    var p = document.getElementById('adminPanel');
+    const p = document.getElementById('adminPanel');
     if (p.style.display === 'block') {
       p.style.display = 'none';
     } else {
-      var pass = prompt("Ingresa la clave de administrador:");
+      const pass = prompt("Ingresa la clave de administrador:");
       if (pass === "1234") {
         p.style.display = 'block';
         actualizarFormularioAdmin();
@@ -352,13 +352,13 @@
   }
 
   function validarDiaSorteoAdmin() {
-    var juego = document.getElementById('adminGameSelect').value;
-    var fechaVal = document.getElementById('adminDrawDate').value;
-    var warning = document.getElementById('dayWarning');
+    const juego = document.getElementById('adminGameSelect').value;
+    const fechaVal = document.getElementById('adminDrawDate').value;
+    const warning = document.getElementById('dayWarning');
 
     if ((juego === 'quini6' || juego === 'megalotto') && fechaVal) {
-      var fechaObj = new Date(fechaVal + 'T00:00:00');
-      var diaSemana = fechaObj.getDay();
+      const fechaObj = new Date(fechaVal + 'T00:00:00');
+      const diaSemana = fechaObj.getDay();
       if (diaSemana !== 0 && diaSemana !== 3) {
         warning.style.display = 'block';
       } else {
@@ -370,8 +370,8 @@
   }
 
   function alCambiarJuego() {
-    var juego = document.getElementById('gameSelect').value;
-    var turnoContainer = document.getElementById('turnoContainer');
+    const juego = document.getElementById('gameSelect').value;
+    const turnoContainer = document.getElementById('turnoContainer');
 
     if (juego === 'quiniela') {
       turnoContainer.style.display = 'block';
@@ -386,36 +386,42 @@
   }
 
   function actualizarFormularioAdmin() {
-    var juego = document.getElementById('adminGameSelect').value;
-    var subLabel = document.getElementById('adminSubLabel');
-    var subSelect = document.getElementById('adminSubSelect');
-    var resultLabel = document.getElementById('adminResultLabel');
-    var resultInput = document.getElementById('adminDrawResult');
-    var helperHint = document.getElementById('adminHelperHint');
+    const juego = document.getElementById('adminGameSelect').value;
+    const subLabel = document.getElementById('adminSubLabel');
+    const subSelect = document.getElementById('adminSubSelect');
+    const resultLabel = document.getElementById('adminResultLabel');
+    const resultInput = document.getElementById('adminDrawResult');
+    const helperHint = document.getElementById('adminHelperHint');
 
     if (juego === 'quiniela') {
       subLabel.innerText = 'Turno del Sorteo:';
-      subSelect.innerHTML = '<option value="tempranero">Tempranero</option>' +
-        '<option value="matutino">Matutino</option>' +
-        '<option value="vespertino">Vespertino</option>' +
-        '<option value="nocturno">Nocturno</option>';
+      subSelect.innerHTML = `
+        <option value="tempranero">Tempranero</option>
+        <option value="matutino">Matutino</option>
+        <option value="vespertino">Vespertino</option>
+        <option value="nocturno">Nocturno</option>
+      `;
       resultLabel.innerText = 'Premios 1° al 7° (3 cifras, 1° = Cabeza):';
       resultInput.placeholder = 'Ej: 745 123 890 456 012 334 981';
       helperHint.style.display = 'block';
     } else if (juego === 'megalotto') {
       subLabel.innerText = 'Modalidad Extraída:';
-      subSelect.innerHTML = '<option value="pozo">Mega Pozo</option>' +
-        '<option value="revancha">Mega Revancha</option>' +
-        '<option value="chance">Mega Chance</option>';
+      subSelect.innerHTML = `
+        <option value="pozo">Mega Pozo</option>
+        <option value="revancha">Mega Revancha</option>
+        <option value="chance">Mega Chance</option>
+      `;
       resultLabel.innerText = '6 Números Ganadores (01 al 36):';
       resultInput.placeholder = 'Ejemplo: 04 12 18 25 31 36';
       helperHint.style.display = 'none';
     } else if (juego === 'quini6') {
       subLabel.innerText = 'Modalidad Extraída:';
-      subSelect.innerHTML = '<option value="tradicional">Tradicional (Primer Sorteo)</option>' +
-        '<option value="segunda">La Segunda del Quini</option>' +
-        '<option value="revancha">Revancha</option>' +
-        '<option value="siempre_sale">Siempre Sale</option>';
+      subSelect.innerHTML = `
+        <option value="tradicional">Tradicional (Primer Sorteo)</option>
+        <option value="segunda">La Segunda del Quini</option>
+        <option value="revancha">Revancha</option>
+        <option value="siempre_sale">Siempre Sale</option>
+      `;
       resultLabel.innerText = '6 Números Ganadores (00 al 45):';
       resultInput.placeholder = 'Ejemplo: 02 11 19 24 33 41';
       helperHint.style.display = 'none';
@@ -426,22 +432,22 @@
   }
 
   function obtenerLlaveStorage(juego, sub) {
-    return 'sorteos_' + juego + '_' + sub;
+    return `sorteos_${juego}_${sub}`;
   }
 
   function guardarSorteoAdmin() {
-    var juego = document.getElementById('adminGameSelect').value;
-    var fecha = document.getElementById('adminDrawDate').value;
-    var sub = document.getElementById('adminSubSelect').value;
-    var resultadoRaw = document.getElementById('adminDrawResult').value.trim();
+    const juego = document.getElementById('adminGameSelect').value;
+    const fecha = document.getElementById('adminDrawDate').value;
+    const sub = document.getElementById('adminSubSelect').value;
+    const resultadoRaw = document.getElementById('adminDrawResult').value.trim();
 
     if (!fecha || !resultadoRaw) {
       alert("Por favor completa la fecha y el resultado del sorteo.");
       return;
     }
 
-    var key = obtenerLlaveStorage(juego, sub);
-    var lista = JSON.parse(localStorage.getItem(key) || '[]');
+    const key = obtenerLlaveStorage(juego, sub);
+    let lista = JSON.parse(localStorage.getItem(key) || '[]');
 
     lista.unshift({
       id: Date.now(),
@@ -461,41 +467,52 @@
   }
 
   function eliminarSorteoAdmin(key, id) {
-    var lista = JSON.parse(localStorage.getItem(key) || '[]');
-    lista = lista.filter(function(item) { return item.id !== id; });
+    let lista = JSON.parse(localStorage.getItem(key) || '[]');
+    lista = lista.filter(item => item.id !== id);
     localStorage.setItem(key, JSON.stringify(lista));
     renderizarTablaAdmin();
     analizarFrecuencias();
   }
 
   function renderizarTablaAdmin() {
-    var juego = document.getElementById('adminGameSelect').value;
-    var sub = document.getElementById('adminSubSelect').value;
-    var key = obtenerLlaveStorage(juego, sub);
-    var lista = JSON.parse(localStorage.getItem(key) || '[]');
-    var container = document.getElementById('adminHistoryTable');
+    const juego = document.getElementById('adminGameSelect').value;
+    const sub = document.getElementById('adminSubSelect').value;
+    const key = obtenerLlaveStorage(juego, sub);
+    const lista = JSON.parse(localStorage.getItem(key) || '[]');
+    const container = document.getElementById('adminHistoryTable');
 
     if (lista.length === 0) {
       container.innerHTML = '<div style="font-size:11px; color:#6c757d; margin-top:5px;">No hay sorteos registrados para este filtro.</div>';
       return;
     }
 
-    var html = '<table class="history-table"><thead><tr>' +
-      '<th>Fecha</th><th>Turno</th><th>1° Cabeza / Premios 1-7</th><th>Acción</th>' +
-      '</tr></thead><tbody>';
+    let html = `
+      <table class="history-table">
+        <thead>
+          <tr>
+            <th>Fecha</th>
+            <th>Turno</th>
+            <th>1° Cabeza / Premios 1-7</th>
+            <th>Acción</th>
+          </tr>
+        </thead>
+        <tbody>
+    `;
 
-    lista.forEach(function(item) {
-      var tokens = item.resultado.replace(/[\n\r;,-]/g, ' ').split(/\s+/).filter(function(t) { return t.length > 0; });
-      var displayRes = item.resultado;
+    lista.forEach(item => {
+      const tokens = item.resultado.replace(/[\n\r;,-]/g, ' ').split(/\s+/).filter(t => t.length > 0);
+      let displayRes = item.resultado;
       if (juego === 'quiniela' && tokens.length > 1) {
-        displayRes = '<span style="color:#d90429;">1°: ' + tokens[0] + '</span> | <small>' + tokens.slice(1, 7).join(' ') + '</small>';
+        displayRes = `<span style="color:#d90429;">1°: ${tokens[0]}</span> | <small>${tokens.slice(1, 7).join(' ')}</small>`;
       }
-      html += '<tr>' +
-        '<td>' + item.fecha + '</td>' +
-        '<td>' + item.sub + '</td>' +
-        '<td><b>' + displayRes + '</b></td>' +
-        '<td><button class="btn-danger" onclick="eliminarSorteoAdmin(\'' + key + '\', ' + item.id + ')">X</button></td>' +
-        '</tr>';
+      html += `
+        <tr>
+          <td>${item.fecha}</td>
+          <td>${item.sub}</td>
+          <td><b>${displayRes}</b></td>
+          <td><button class="btn-danger" onclick="eliminarSorteoAdmin('${key}', ${item.id})">X</button></td>
+        </tr>
+      `;
     });
 
     html += '</tbody></table>';
@@ -503,15 +520,15 @@
   }
 
   function obtenerDatosProcesadosPublicos() {
-    var juego = document.getElementById('gameSelect').value;
-    var llavesAProcesar = [];
+    const juego = document.getElementById('gameSelect').value;
+    let llavesAProcesar = [];
 
     if (juego === 'quiniela') {
-      var turno = document.getElementById('shiftSelect').value;
+      const turno = document.getElementById('shiftSelect').value;
       if (turno === 'general') {
         llavesAProcesar = ['sorteos_quiniela_tempranero', 'sorteos_quiniela_matutino', 'sorteos_quiniela_vespertino', 'sorteos_quiniela_nocturno'];
       } else {
-        llavesAProcesar = ['sorteos_quiniela_' + turno];
+        llavesAProcesar = [`sorteos_quiniela_${turno}`];
       }
     } else if (juego === 'megalotto') {
       llavesAProcesar = ['sorteos_megalotto_pozo', 'sorteos_megalotto_revancha', 'sorteos_megalotto_chance'];
@@ -519,31 +536,28 @@
       llavesAProcesar = ['sorteos_quini6_tradicional', 'sorteos_quini6_segunda', 'sorteos_quini6_revancha', 'sorteos_quini6_siempre_sale'];
     }
 
-    var todosResultados = [];
-    var zonaRedoblona1a7 = [];
-    var posiciones2a7 = [];
+    let todosResultados = [];
+    let zonaRedoblona1a7 = [];
 
-    llavesAProcesar.forEach(function(key) {
-      var lista = JSON.parse(localStorage.getItem(key) || '[]');
-      lista.forEach(function(item) {
-        var tokens = item.resultado.replace(/[\n\r;,-]/g, ' ').split(/\s+/).filter(function(t) { return t.length > 0; });
+    llavesAProcesar.forEach(key => {
+      const lista = JSON.parse(localStorage.getItem(key) || '[]');
+      lista.forEach(item => {
+        const tokens = item.resultado.replace(/[\n\r;,-]/g, ' ').split(/\s+/).filter(t => t.length > 0);
         if (juego === 'quiniela') {
-          tokens.slice(0, 7).forEach(function(t, idx) {
-            var limpio = t.replace(/\D/g, '');
+          tokens.slice(0, 7).forEach((t, idx) => {
+            let limpio = t.replace(/\D/g, '');
             if (limpio.length > 0) {
-              var ambo = limpio.length >= 2 ? limpio.slice(-2) : '0' + limpio;
+              let ambo = limpio.length >= 2 ? limpio.slice(-2) : '0' + limpio;
               zonaRedoblona1a7.push(ambo);
               if (idx === 0) {
                 todosResultados.push(ambo);
-              } else {
-                posiciones2a7.push(ambo);
               }
             }
           });
         } else {
-          tokens.forEach(function(t) {
-            var limpio = t.replace(/\D/g, '');
-            var num = parseInt(limpio, 10);
+          tokens.forEach(t => {
+            let limpio = t.replace(/\D/g, '');
+            let num = parseInt(limpio, 10);
             if (!isNaN(num)) {
               todosResultados.push(num < 10 ? '0' + num : '' + num);
             }
@@ -552,109 +566,95 @@
       });
     });
 
-    return { principales: todosResultados, zona1a7: zonaRedoblona1a7, posiciones2a7: posiciones2a7 };
+    return { principales: todosResultados, zona1a7: zonaRedoblona1a7 };
   }
 
   function analizarFrecuencias() {
-    var datos = obtenerDatosProcesadosPublicos();
-    var principales = datos.principales;
-    var zona1a7 = datos.zona1a7;
-    var posiciones2a7 = datos.posiciones2a7;
-
-    var statsBox = document.getElementById('statsContainer');
-    var juego = document.getElementById('gameSelect').value;
+    const { principales, zona1a7 } = obtenerDatosProcesadosPublicos();
+    const statsBox = document.getElementById('statsContainer');
+    const juego = document.getElementById('gameSelect').value;
 
     if (principales.length === 0) {
-      statsBox.innerHTML = '<div class="stats-panel" style="text-align:center; color:#6c757d; font-size:13px;">' +
-        '📊 <i>Análisis listo para recibir el historial de sorteos oficiales.</i>' +
-        '</div>';
-      return { calientes: [], frios: [], calientes1a7: [], top2a7: [] };
+      statsBox.innerHTML = `
+        <div class="stats-panel" style="text-align:center; color:#6c757d; font-size:13px;">
+          📊 <i>Análisis listo para recibir el historial de sorteos oficiales.</i>
+        </div>
+      `;
+      return { calientes: [], frios: [], calientes1a7: [] };
     }
 
-    var conteo = {};
-    principales.forEach(function(num) {
+    const conteo = {};
+    principales.forEach(num => {
       conteo[num] = (conteo[num] || 0) + 1;
     });
 
-    var ordenados = Object.keys(conteo).sort(function(a, b) { return conteo[b] - conteo[a]; });
-    var calientes = ordenados.slice(0, 5);
+    const ordenados = Object.keys(conteo).sort((a, b) => conteo[b] - conteo[a]);
+    const calientes = ordenados.slice(0, 5);
 
-    var friosHtml = '<span style="font-size:12px; color:#6c757d;"><i>Carga más sorteos para comparar</i></span>';
+    // Evita mostrar el mismo número como caliente y frío cuando la muestra tiene pocos datos
+    let friosHtml = '<span style="font-size:12px; color:#6c757d;"><i>Carga más sorteos para comparar</i></span>';
     if (ordenados.length > 3) {
-      var candidatosFrios = ordenados.slice(-5).reverse().filter(function(n) { return !calientes.includes(n); });
+      const candidatosFrios = ordenados.slice(-5).reverse().filter(n => !calientes.includes(n));
       if (candidatosFrios.length > 0) {
-        friosHtml = candidatosFrios.map(function(n) {
-          return '<span class="badge-chip" style="color:var(--cold);">' + n + ' <small>(' + conteo[n] + 'x)</small></span>';
-        }).join('');
+        friosHtml = candidatosFrios.map(n => `<span class="badge-chip" style="color:var(--cold);">${n} <small>(${conteo[n]}x)</small></span>`).join('');
       }
     }
 
-    var calientes1a7 = [];
-    var top2a7 = [];
-    var htmlRedoblonaStats = '';
+    let calientes1a7 = [];
+    let htmlRedoblonaStats = '';
 
     if (juego === 'quiniela' && zona1a7.length > 0) {
-      var conteo1a7 = {};
-      zona1a7.forEach(function(num) {
+      const conteo1a7 = {};
+      zona1a7.forEach(num => {
         conteo1a7[num] = (conteo1a7[num] || 0) + 1;
       });
-      calientes1a7 = Object.keys(conteo1a7).sort(function(a, b) { return conteo1a7[b] - conteo1a7[a]; }).slice(0, 7);
+      calientes1a7 = Object.keys(conteo1a7).sort((a, b) => conteo1a7[b] - conteo1a7[a]).slice(0, 6);
 
-      var conteo2a7 = {};
-      posiciones2a7.forEach(function(num) {
-        conteo2a7[num] = (conteo2a7[num] || 0) + 1;
-      });
-      top2a7 = Object.keys(conteo2a7).sort(function(a, b) { return conteo2a7[b] - conteo2a7[a]; });
-
-      htmlRedoblonaStats = '<div style="margin-top:10px; padding-top:8px; border-top:1px dashed #ced4da;">' +
-        '<span style="color:var(--gold); font-weight:bold; font-size:13px;">🎯 Ambos Fuertes en Premios 1° al 7° (Zona Redoblona):</span><br>' +
-        calientes1a7.map(function(n) {
-          return '<span class="badge-chip" style="color:var(--gold); border-color:#ffe082;">' + n + ' <small>(' + conteo1a7[n] + 'x)</small></span>';
-        }).join('') +
-        '</div>';
+      htmlRedoblonaStats = `
+        <div style="margin-top:10px; padding-top:8px; border-top:1px dashed #ced4da;">
+          <span style="color:var(--gold); font-weight:bold; font-size:13px;">🎯 Ambos Fuertes en Premios 1° al 7° (Zona Redoblona):</span><br>
+          ${calientes1a7.map(n => `<span class="badge-chip" style="color:var(--gold); border-color:#ffe082;">${n} <small>(${conteo1a7[n]}x)</small></span>`).join('')}
+        </div>
+      `;
     }
 
-    var tituloEstadistica = juego === 'quiniela'
-      ? '📊 Tendencia "A la Cabeza" (1° Premio)'
-      : '📊 Tendencia de Frecuencia Unificada (Todas las Modalidades)';
+    const tituloEstadistica = juego === 'quiniela' ? '📊 Tendencia "A la Cabeza" (1° Premio)' : '📊 Tendencia de Frecuencia Unificada (Todas las Modalidades)';
 
-    statsBox.innerHTML = '<div class="stats-panel">' +
-      '<div style="font-weight:bold; font-size:13px; color:var(--primary); margin-bottom:8px;">' + tituloEstadistica + '</div>' +
-      '<div class="grid-2">' +
-        '<div>' +
-          '<span class="hot-badge">🔥 Más Frecuentes:</span><br>' +
-          calientes.map(function(n) {
-            return '<span class="badge-chip" style="color:var(--hot);">' + n + ' <small>(' + conteo[n] + 'x)</small></span>';
-          }).join('') +
-        '</div>' +
-        '<div>' +
-          '<span class="cold-badge">❄️ Fríos / Atrasados:</span><br>' +
-          friosHtml +
-        '</div>' +
-      '</div>' +
-      htmlRedoblonaStats +
-      '</div>';
+    statsBox.innerHTML = `
+      <div class="stats-panel">
+        <div style="font-weight:bold; font-size:13px; color:var(--primary); margin-bottom:8px;">${tituloEstadistica}</div>
+        <div class="grid-2">
+          <div>
+            <span class="hot-badge">🔥 Más Frecuentes:</span><br>
+            ${calientes.map(n => `<span class="badge-chip" style="color:var(--hot);">${n} <small>(${conteo[n]}x)</small></span>`).join('')}
+          </div>
+          <div>
+            <span class="cold-badge">❄️ Fríos / Atrasados:</span><br>
+            ${friosHtml}
+          </div>
+        </div>
+        ${htmlRedoblonaStats}
+      </div>
+    `;
 
-    return { calientes: calientes, frios: [], calientes1a7: calientes1a7, top2a7: top2a7 };
+    return { calientes, frios: [], calientes1a7 };
   }
 
   function calcularNumeroAtraccion(fechaStr) {
-    var limpia = fechaStr.replace(/-/g, '');
-    var suma = limpia.split('').reduce(function(acc, curr) { return acc + parseInt(curr, 10); }, 0);
+    const limpia = fechaStr.replace(/-/g, '');
+    let suma = limpia.split('').reduce((acc, curr) => acc + parseInt(curr), 0);
     while (suma > 9) {
-      suma = suma.toString().split('').reduce(function(acc, curr) { return acc + parseInt(curr, 10); }, 0);
+      suma = suma.toString().split('').reduce((acc, curr) => acc + parseInt(curr), 0);
     }
     return suma;
   }
 
-  function priorizarPorVibracionYEstadisticas(listaNumeros, vibracion, calientes, calientesSecundarios, equivalentes) {
-    calientesSecundarios = calientesSecundarios || [];
-    equivalentes = equivalentes || [];
-    var vibracionStr = vibracion.toString();
-
-    return listaNumeros.sort(function(a, b) {
-      var pesoA = 0;
-      var pesoB = 0;
+  function priorizarPorVibracionYEstadisticas(listaNumeros, vibracion, calientes, calientesSecundarios = [], equivalentes = []) {
+    const vibracionStr = vibracion.toString();
+    
+    return listaNumeros.sort((a, b) => {
+      let pesoA = 0;
+      let pesoB = 0;
 
       if (calientes.includes(a)) pesoA += 4;
       if (calientes.includes(b)) pesoB += 4;
@@ -673,21 +673,21 @@
   }
 
   function generarPiramide(fechaStr) {
-    var limpia = fechaStr.replace(/-/g, '');
-    var digitos = [];
+    const limpia = fechaStr.replace(/-/g, '');
+    let digitos = [];
     if (limpia.length === 8) {
-      digitos = (limpia.substring(6, 8) + limpia.substring(4, 6) + limpia.substring(0, 4)).split('').map(Number);
+      digitos = (limpia.substring(6,8) + limpia.substring(4,6) + limpia.substring(0,4)).split('').map(Number);
     } else {
       digitos = limpia.split('').map(Number);
     }
 
-    var niveles = [digitos];
-    var actual = digitos;
+    const niveles = [digitos];
+    let actual = digitos;
 
     while (actual.length > 1) {
-      var siguiente = [];
-      for (var i = 0; i < actual.length - 1; i++) {
-        siguiente.push((actual[i] + actual[i + 1]) % 10);
+      const siguiente = [];
+      for (let i = 0; i < actual.length - 1; i++) {
+        siguiente.push((actual[i] + actual[i+1]) % 10);
       }
       niveles.push(siguiente);
       actual = siguiente;
@@ -696,57 +696,54 @@
   }
 
   function obtenerNumerosDePiramide(niveles, longitud) {
-    var encontrados = new Set();
-    var strNiveles = niveles.map(function(n) { return n.join(''); });
-
-    for (var f = 0; f < strNiveles.length; f++) {
-      var fila = strNiveles[f];
-      for (var i = 0; i <= fila.length - longitud; i++) {
+    const encontrados = new Set();
+    const strNiveles = niveles.map(n => n.join(''));
+    
+    for (let fila of strNiveles) {
+      for (let i = 0; i <= fila.length - longitud; i++) {
         encontrados.add(fila.substring(i, i + longitud));
       }
-      var invertida = fila.split('').reverse().join('');
-      for (var j = 0; j <= invertida.length - longitud; j++) {
-        encontrados.add(invertida.substring(j, j + longitud));
+      const invertida = fila.split('').reverse().join('');
+      for (let i = 0; i <= invertida.length - longitud; i++) {
+        encontrados.add(invertida.substring(i, i + longitud));
       }
     }
 
-    var diagIzq = '';
-    var diagDer = '';
-    for (var k = 0; k < niveles.length; k++) {
-      diagIzq += niveles[k][0];
-      diagDer += niveles[k][niveles[k].length - 1];
+    let diagIzq = '', diagDer = '';
+    for (let i = 0; i < niveles.length; i++) {
+      diagIzq += niveles[i][0];
+      diagDer += niveles[i][niveles[i].length - 1];
     }
-    for (var m = 0; m <= diagIzq.length - longitud; m++) {
-      encontrados.add(diagIzq.substring(m, m + longitud));
-      encontrados.add(diagDer.substring(m, m + longitud));
+    for (let i = 0; i <= diagIzq.length - longitud; i++) {
+      encontrados.add(diagIzq.substring(i, i + longitud));
+      encontrados.add(diagDer.substring(i, i + longitud));
     }
 
     return Array.from(encontrados);
   }
 
   function obtenerNumerosLotoDiversificados(niveles, min, max, vibracionDia, calientes, juego) {
-    var encontrados = new Set();
-    var strNiveles = niveles.map(function(n) { return n.join(''); });
-
-    for (var f = 0; f < strNiveles.length; f++) {
-      var fila = strNiveles[f];
-      for (var i = 0; i <= fila.length - 2; i++) {
+    const encontrados = new Set();
+    const strNiveles = niveles.map(n => n.join(''));
+    
+    for (let fila of strNiveles) {
+      for (let i = 0; i <= fila.length - 2; i++) {
         encontrados.add(fila.substring(i, i + 2));
       }
     }
 
-    var semillaJuego = juego === 'megalotto' ? 3 : 7;
-    var digitosBase = niveles[0];
-    for (var d = 0; d < digitosBase.length; d++) {
-      var num1 = (digitosBase[d] + vibracionDia + semillaJuego) % 10;
-      var num2 = digitosBase[(d + vibracionDia + semillaJuego) % digitosBase.length];
-      encontrados.add('' + num1 + num2);
-      encontrados.add('' + num2 + num1);
+    const semillaJuego = juego === 'megalotto' ? 3 : 7;
+    const digitosBase = niveles[0];
+    for (let i = 0; i < digitosBase.length; i++) {
+      let num1 = (digitosBase[i] + vibracionDia + semillaJuego) % 10;
+      let num2 = (digitosBase[(i + vibracionDia + semillaJuego) % digitosBase.length]);
+      encontrados.add(`${num1}${num2}`);
+      encontrados.add(`${num2}${num1}`);
     }
 
-    var validosEstructurados = [];
-    encontrados.forEach(function(strVal) {
-      var val = parseInt(strVal, 10);
+    let validosEstructurados = [];
+    encontrados.forEach(strVal => {
+      let val = parseInt(strVal);
       if (isNaN(val)) return;
 
       if (val > max) {
@@ -755,21 +752,20 @@
         val = min + val;
       }
 
-      var numFormatted = val < 10 ? '0' + val : '' + val;
+      let numFormatted = val < 10 ? '0' + val : '' + val;
       if (!validosEstructurados.includes(numFormatted)) {
         validosEstructurados.push(numFormatted);
       }
     });
 
-    var equivalentesCalientes = obtenerSetEquivalentes(calientes);
-    var ordenados = priorizarPorVibracionYEstadisticas(validosEstructurados, vibracionDia, calientes, [], equivalentesCalientes);
+    const equivalentesCalientes = obtenerSetEquivalentes(calientes);
+    let ordenados = priorizarPorVibracionYEstadisticas(validosEstructurados, vibracionDia, calientes, [], equivalentesCalientes);
 
-    var seleccionados = [];
-    var conteoDecanas = {};
+    let seleccionados = [];
+    let conteoDecanas = {};
 
-    for (var idx = 0; idx < ordenados.length; idx++) {
-      var numStr = ordenados[idx];
-      var decena = Math.floor(parseInt(numStr, 10) / 10);
+    for (let numStr of ordenados) {
+      let decena = Math.floor(parseInt(numStr) / 10);
       if ((conteoDecanas[decena] || 0) < 2) {
         seleccionados.push(numStr);
         conteoDecanas[decena] = (conteoDecanas[decena] || 0) + 1;
@@ -777,137 +773,116 @@
       if (seleccionados.length === 6) break;
     }
 
-    var intento = 1;
+    let intento = 1;
     while (seleccionados.length < 6) {
-      var rand = ((vibracionDia * 11 + intento * semillaJuego * 17) % (max - min + 1)) + min;
-      var randStr = rand < 10 ? '0' + rand : '' + rand;
+      let rand = ((vibracionDia * 11 + intento * semillaJuego * 17) % (max - min + 1)) + min;
+      let randStr = rand < 10 ? '0' + rand : '' + rand;
       if (!seleccionados.includes(randStr)) {
         seleccionados.push(randStr);
       }
       intento++;
     }
 
-    return seleccionados.sort(function(a, b) { return parseInt(a, 10) - parseInt(b, 10); });
+    return seleccionados.sort((a, b) => parseInt(a) - parseInt(b));
   }
 
   function generar() {
-    var juego = document.getElementById('gameSelect').value;
-    var fechaVal = document.getElementById('dateInput').value;
+    const juego = document.getElementById('gameSelect').value;
+    const fechaVal = document.getElementById('dateInput').value;
     if (!fechaVal) return;
 
-    var freq = analizarFrecuencias();
-    var calientes = freq.calientes;
-    var calientes1a7 = freq.calientes1a7;
-    var top2a7 = freq.top2a7;
-
-    var vibracionDia = calcularNumeroAtraccion(fechaVal);
-    var niveles = generarPiramide(fechaVal);
-
-    var htmlPiramide = niveles.map(function(n) { return n.join(' '); }).join('<br>');
+    const { calientes, calientes1a7 } = analizarFrecuencias();
+    const vibracionDia = calcularNumeroAtraccion(fechaVal);
+    const niveles = generarPiramide(fechaVal);
+    
+    const htmlPiramide = niveles.map(n => n.join(' ')).join('<br>');
     document.getElementById('pyramidContainer').innerHTML = htmlPiramide;
 
-    var resBox = document.getElementById('resultsContainer');
+    const resBox = document.getElementById('resultsContainer');
     resBox.innerHTML = '';
 
-    var digitoPunta = niveles[niveles.length - 1][0];
-    var eqPunta = obtenerEquivalente(digitoPunta);
+    const digitoPunta = niveles[niveles.length - 1][0];
+    const eqPunta = obtenerEquivalente(digitoPunta);
 
     if (juego === 'quiniela') {
-      var turnoSelect = document.getElementById('shiftSelect');
-      var turnoTexto = turnoSelect.options[turnoSelect.selectedIndex].text;
-      document.getElementById('resultsTitle').innerText = 'Pronóstico Quiniela (' + turnoTexto + ') - Vib. ' + vibracionDia;
+      const turnoTexto = document.getElementById('shiftSelect').options[document.getElementById('shiftSelect').selectedIndex].text;
+      document.getElementById('resultsTitle').innerText = `Pronóstico Quiniela (${turnoTexto}) - Vib. ${vibracionDia}`;
 
-      var candidatos2 = obtenerNumerosDePiramide(niveles, 2);
-      var equivalentesBase = obtenerSetEquivalentes(calientes.concat(calientes1a7).concat(candidatos2.slice(0, 6)));
+      const candidatos2 = obtenerNumerosDePiramide(niveles, 2);
+      const equivalentesBase = obtenerSetEquivalentes([...calientes, ...calientes1a7, ...candidatos2.slice(0, 6)]);
 
-      var pares = candidatos2.filter(function(num) { return parseInt(num[1], 10) % 2 === 0; });
-      var impares = candidatos2.filter(function(num) { return parseInt(num[1], 10) % 2 !== 0; });
-      var candidatos3 = obtenerNumerosDePiramide(niveles, 3);
-      var candidatos4 = obtenerNumerosDePiramide(niveles, 4);
+      const pares = candidatos2.filter(num => parseInt(num[1]) % 2 === 0);
+      const impares = candidatos2.filter(num => parseInt(num[1]) % 2 !== 0);
+      const candidatos3 = obtenerNumerosDePiramide(niveles, 3);
+      const candidatos4 = obtenerNumerosDePiramide(niveles, 4);
 
-      var seleccionPares = priorizarPorVibracionYEstadisticas(pares.slice(), vibracionDia, calientes, calientes1a7, equivalentesBase).slice(0, 4);
-      var seleccionImpares = priorizarPorVibracionYEstadisticas(impares.slice(), vibracionDia, calientes, calientes1a7, equivalentesBase).slice(0, 4);
-      var seleccionTernos = priorizarPorVibracionYEstadisticas(candidatos3.slice(), vibracionDia, calientes, [], equivalentesBase).slice(0, 4);
-      var seleccionCuaternos = priorizarPorVibracionYEstadisticas(candidatos4.slice(), vibracionDia, calientes, [], equivalentesBase).slice(0, 4);
+      const seleccionPares = priorizarPorVibracionYEstadisticas([...pares], vibracionDia, calientes, calientes1a7, equivalentesBase).slice(0, 4);
+      const seleccionImpares = priorizarPorVibracionYEstadisticas([...impares], vibracionDia, calientes, calientes1a7, equivalentesBase).slice(0, 4);
+      const seleccionTernos = priorizarPorVibracionYEstadisticas([...candidatos3], vibracionDia, calientes, [], equivalentesBase).slice(0, 4);
+      const seleccionCuaternos = priorizarPorVibracionYEstadisticas([...candidatos4], vibracionDia, calientes, [], equivalentesBase).slice(0, 4);
 
-      var poolRedoblona = priorizarPorVibracionYEstadisticas(candidatos2.slice(), vibracionDia, calientes1a7, calientes, equivalentesBase);
-      var parejasRedoblona = [];
-
-      // 1ª pareja: prioriza cruce entre números fuertes distintos (no espejo forzado)
+      const poolRedoblona = priorizarPorVibracionYEstadisticas([...candidatos2], vibracionDia, calientes1a7, calientes, equivalentesBase);
+      let parejasRedoblona = [];
       if (poolRedoblona.length >= 2) {
-        var p1 = poolRedoblona[0];
-        var eqP1 = obtenerEquivalente(p1);
-        var acomp1 = poolRedoblona.find(function(n) { return n !== p1 && n !== eqP1; }) || poolRedoblona[1];
-        parejasRedoblona.push(p1 + ' con ' + acomp1);
+        const primero = poolRedoblona[0];
+        const eqPrimero = obtenerEquivalente(primero);
+        const segundo = poolRedoblona.find(n => n !== primero && n === eqPrimero) || poolRedoblona[1];
+        parejasRedoblona.push(`${primero} con ${segundo}`);
       }
-
-      // 2ª pareja: usa equivalente si el día es par o si coincide en el pool, sino toma otro candidato fuerte
       if (poolRedoblona.length >= 4) {
-        var usadasP1 = parejasRedoblona[0] ? parejasRedoblona[0].split(' con ') : [];
-        var p2 = poolRedoblona.find(function(n) { return !usadasP1.includes(n); }) || poolRedoblona[2];
-        var eqP2 = obtenerEquivalente(p2);
-        var acomp2 = (vibracionDia % 2 === 0 && poolRedoblona.includes(eqP2) && eqP2 !== p2)
-          ? eqP2
-          : (poolRedoblona.find(function(n) { return n !== p2 && !usadasP1.includes(n); }) || poolRedoblona[3]);
-        parejasRedoblona.push(p2 + ' con ' + acomp2);
+        const tercero = poolRedoblona[2];
+        const eqTercero = obtenerEquivalente(tercero);
+        const cuarto = poolRedoblona.find(n => n !== tercero && n === eqTercero) || poolRedoblona[3];
+        parejasRedoblona.push(`${tercero} con ${cuarto}`);
       }
 
-      // 3ª pareja: Cabeza + el que más sale del 2° al 7° en sorteos anteriores
-      var cabezaBase = calientes[0] || poolRedoblona[0] || candidatos2[0];
-      var acomp2a7 = top2a7.find(function(n) { return n !== cabezaBase; }) || candidatos2.find(function(n) { return n !== cabezaBase; }) || poolRedoblona[1];
-      if (cabezaBase && acomp2a7) {
-        parejasRedoblona.push(cabezaBase + ' con ' + acomp2a7);
-      }
+      const eqDestacados = seleccionPares.slice(0, 2).concat(seleccionImpares.slice(0, 2)).map(n => `${n}→${obtenerEquivalente(n)}`);
 
-      var eqDestacados = seleccionPares.slice(0, 2).concat(seleccionImpares.slice(0, 2)).map(function(n) {
-        return n + '→' + obtenerEquivalente(n);
-      });
-
-      resBox.innerHTML = '<div class="grid-2">' +
-        '<div class="card">' +
-          '<div class="card-title">Dígito Punta</div>' +
-          '<div class="card-value">' + digitoPunta + '</div>' +
-          '<div class="card-sub">Equiv.: <b>' + eqPunta + '</b></div>' +
-        '</div>' +
-        '<div class="card">' +
-          '<div class="card-title">Ambos (Pares)</div>' +
-          '<div class="card-value">' + (seleccionPares.join(' - ') || 'N/A') + '</div>' +
-        '</div>' +
-        '</div>' +
-        '<div class="card">' +
-          '<div class="card-title">Ambos Impares</div>' +
-          '<div class="card-value">' + (seleccionImpares.join(' - ') || 'N/A') + '</div>' +
-        '</div>' +
-        '<div class="card-redoblona">' +
-          '<div class="card-title" style="color:#856404;">🎯 Redoblonas Sugeridas (1° al 7°)</div>' +
-          '<div class="card-value-gold">' + (parejasRedoblona.join('  |  ') || 'N/A') + '</div>' +
-          '<div class="card-sub">Equivalencias (0-5, 1-6, 2-7, 3-8, 4-9): <b>' + (eqDestacados.join(' · ') || 'N/A') + '</b></div>' +
-        '</div>' +
-        '<div class="card">' +
-          '<div class="card-title">Ternos (3 Cifras)</div>' +
-          '<div class="card-value">' + (seleccionTernos.join(' - ') || 'N/A') + '</div>' +
-        '</div>' +
-        '<div class="card">' +
-          '<div class="card-title">Cuaternos (4 Cifras)</div>' +
-          '<div class="card-value">' + (seleccionCuaternos.join(' - ') || 'N/A') + '</div>' +
-        '</div>';
+      resBox.innerHTML = `
+        <div class="grid-2">
+          <div class="card">
+            <div class="card-title">Dígito Punta</div>
+            <div class="card-value">${digitoPunta}</div>
+            <div class="card-sub">Equiv.: <b>${eqPunta}</b></div>
+          </div>
+          <div class="card">
+            <div class="card-title">Ambos (Pares)</div>
+            <div class="card-value">${seleccionPares.join(' - ') || 'N/A'}</div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-title">Ambos Impares</div>
+          <div class="card-value">${seleccionImpares.join(' - ') || 'N/A'}</div>
+        </div>
+        <div class="card-redoblona">
+          <div class="card-title" style="color:#856404;">🎯 Redoblonas Sugeridas (1° al 7°)</div>
+          <div class="card-value-gold">${parejasRedoblona.join('  |  ') || 'N/A'}</div>
+          <div class="card-sub">Equivalencias (0-5, 1-6, 2-7, 3-8, 4-9): <b>${eqDestacados.join(' · ') || 'N/A'}</b></div>
+        </div>
+        <div class="card">
+          <div class="card-title">Ternos (3 Cifras)</div>
+          <div class="card-value">${seleccionTernos.join(' - ') || 'N/A'}</div>
+        </div>
+        <div class="card">
+          <div class="card-title">Cuaternos (4 Cifras)</div>
+          <div class="card-value">${seleccionCuaternos.join(' - ') || 'N/A'}</div>
+        </div>
+      `;
     } else {
-      var min = 0;
-      var max = 45;
-      var nombre = 'Quini 6';
+      let min = 0, max = 45, nombre = 'Quini 6';
       if (juego === 'megalotto') {
-        min = 1;
-        max = 36;
-        nombre = 'Mega Lotto PY';
+        min = 1; max = 36; nombre = 'Mega Lotto PY';
       }
-      document.getElementById('resultsTitle').innerText = 'Jugada Única Recomendada para ' + nombre;
+      document.getElementById('resultsTitle').innerText = `Jugada Única Recomendada para ${nombre}`;
 
-      var finalNums = obtenerNumerosLotoDiversificados(niveles, min, max, vibracionDia, calientes, juego);
+      const finalNums = obtenerNumerosLotoDiversificados(niveles, min, max, vibracionDia, calientes, juego);
 
-      resBox.innerHTML = '<div class="card">' +
-        '<div class="card-title">6 Números Magnéticos (Válidos para Todos los Sorteos)</div>' +
-        '<div class="card-value">' + finalNums.join(' - ') + '</div>' +
-        '</div>';
+      resBox.innerHTML = `
+        <div class="card">
+          <div class="card-title">6 Números Magnéticos (Válidos para Todos los Sorteos)</div>
+          <div class="card-value">${finalNums.join(' - ')}</div>
+        </div>
+      `;
     }
   }
 
