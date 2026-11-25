@@ -153,6 +153,11 @@
       color: var(--gold);
       letter-spacing: 1px;
     }
+    .card-sub {
+      font-size: 12px;
+      color: #6c757d;
+      margin-top: 5px;
+    }
     .hot-badge {
       color: var(--hot);
       font-weight: bold;
@@ -297,6 +302,33 @@
 <script>
   document.getElementById('dateInput').valueAsDate = new Date();
   document.getElementById('adminDrawDate').valueAsDate = new Date();
+
+  // Tabla de equivalencias: 0-5, 1-6, 2-7, 3-8, 4-9
+  const EQUIVALENCIAS_DIGITO = {
+    0: 5, 5: 0,
+    1: 6, 6: 1,
+    2: 7, 7: 2,
+    3: 8, 8: 3,
+    4: 9, 9: 4
+  };
+
+  function obtenerEquivalente(numStr) {
+    return String(numStr)
+      .split('')
+      .map(ch => {
+        const d = parseInt(ch, 10);
+        return isNaN(d) ? ch : String(EQUIVALENCIAS_DIGITO[d]);
+      })
+      .join('');
+  }
+
+  function obtenerSetEquivalentes(listaNumeros) {
+    const eqSet = new Set();
+    listaNumeros.forEach(num => {
+      eqSet.add(obtenerEquivalente(num));
+    });
+    return Array.from(eqSet);
+  }
 
   const urlParams = new URLSearchParams(window.location.search);
   if (urlParams.get('admin') === '1') {
@@ -518,7 +550,7 @@
               let ambo = limpio.length >= 2 ? limpio.slice(-2) : '0' + limpio;
               zonaRedoblona1a7.push(ambo);
               if (idx === 0) {
-                todosResultados.push(ambo); // 1° premio = A la Cabeza
+                todosResultados.push(ambo);
               }
             }
           });
@@ -558,7 +590,15 @@
 
     const ordenados = Object.keys(conteo).sort((a, b) => conteo[b] - conteo[a]);
     const calientes = ordenados.slice(0, 5);
-    const frios = ordenados.slice(-5).reverse();
+
+    // Evita mostrar el mismo número como caliente y frío cuando la muestra tiene pocos datos
+    let friosHtml = '<span style="font-size:12px; color:#6c757d;"><i>Carga más sorteos para comparar</i></span>';
+    if (ordenados.length > 3) {
+      const candidatosFrios = ordenados.slice(-5).reverse().filter(n => !calientes.includes(n));
+      if (candidatosFrios.length > 0) {
+        friosHtml = candidatosFrios.map(n => `<span class="badge-chip" style="color:var(--cold);">${n} <small>(${conteo[n]}x)</small></span>`).join('');
+      }
+    }
 
     let calientes1a7 = [];
     let htmlRedoblonaStats = '';
@@ -590,14 +630,14 @@
           </div>
           <div>
             <span class="cold-badge">❄️ Fríos / Atrasados:</span><br>
-            ${frios.map(n => `<span class="badge-chip" style="color:var(--cold);">${n} <small>(${conteo[n]}x)</small></span>`).join('')}
+            ${friosHtml}
           </div>
         </div>
         ${htmlRedoblonaStats}
       </div>
     `;
 
-    return { calientes, frios, calientes1a7 };
+    return { calientes, frios: [], calientes1a7 };
   }
 
   function calcularNumeroAtraccion(fechaStr) {
@@ -609,7 +649,7 @@
     return suma;
   }
 
-  function priorizarPorVibracionYEstadisticas(listaNumeros, vibracion, calientes, calientesSecundarios = []) {
+  function priorizarPorVibracionYEstadisticas(listaNumeros, vibracion, calientes, calientesSecundarios = [], equivalentes = []) {
     const vibracionStr = vibracion.toString();
     
     return listaNumeros.sort((a, b) => {
@@ -624,6 +664,9 @@
 
       if (a.includes(vibracionStr)) pesoA += 2;
       if (b.includes(vibracionStr)) pesoB += 2;
+
+      if (equivalentes.includes(a)) pesoA += 1;
+      if (equivalentes.includes(b)) pesoB += 1;
 
       return pesoB - pesoA;
     });
@@ -715,7 +758,8 @@
       }
     });
 
-    let ordenados = priorizarPorVibracionYEstadisticas(validosEstructurados, vibracionDia, calientes);
+    const equivalentesCalientes = obtenerSetEquivalentes(calientes);
+    let ordenados = priorizarPorVibracionYEstadisticas(validosEstructurados, vibracionDia, calientes, [], equivalentesCalientes);
 
     let seleccionados = [];
     let conteoDecanas = {};
@@ -758,38 +802,48 @@
     resBox.innerHTML = '';
 
     const digitoPunta = niveles[niveles.length - 1][0];
+    const eqPunta = obtenerEquivalente(digitoPunta);
 
     if (juego === 'quiniela') {
       const turnoTexto = document.getElementById('shiftSelect').options[document.getElementById('shiftSelect').selectedIndex].text;
       document.getElementById('resultsTitle').innerText = `Pronóstico Quiniela (${turnoTexto}) - Vib. ${vibracionDia}`;
 
       const candidatos2 = obtenerNumerosDePiramide(niveles, 2);
+      const equivalentesBase = obtenerSetEquivalentes([...calientes, ...calientes1a7, ...candidatos2.slice(0, 6)]);
 
       const pares = candidatos2.filter(num => parseInt(num[1]) % 2 === 0);
       const impares = candidatos2.filter(num => parseInt(num[1]) % 2 !== 0);
       const candidatos3 = obtenerNumerosDePiramide(niveles, 3);
       const candidatos4 = obtenerNumerosDePiramide(niveles, 4);
 
-      const seleccionPares = priorizarPorVibracionYEstadisticas([...pares], vibracionDia, calientes, calientes1a7).slice(0, 4);
-      const seleccionImpares = priorizarPorVibracionYEstadisticas([...impares], vibracionDia, calientes, calientes1a7).slice(0, 4);
-      const seleccionTernos = priorizarPorVibracionYEstadisticas([...candidatos3], vibracionDia, calientes).slice(0, 4);
-      const seleccionCuaternos = priorizarPorVibracionYEstadisticas([...candidatos4], vibracionDia, calientes).slice(0, 4);
+      const seleccionPares = priorizarPorVibracionYEstadisticas([...pares], vibracionDia, calientes, calientes1a7, equivalentesBase).slice(0, 4);
+      const seleccionImpares = priorizarPorVibracionYEstadisticas([...impares], vibracionDia, calientes, calientes1a7, equivalentesBase).slice(0, 4);
+      const seleccionTernos = priorizarPorVibracionYEstadisticas([...candidatos3], vibracionDia, calientes, [], equivalentesBase).slice(0, 4);
+      const seleccionCuaternos = priorizarPorVibracionYEstadisticas([...candidatos4], vibracionDia, calientes, [], equivalentesBase).slice(0, 4);
 
-      // Generar parejas sugeridas para Redoblona (1 a 7) cruzando pirámide + frecuencia 1 a 7
-      const poolRedoblona = priorizarPorVibracionYEstadisticas([...candidatos2], vibracionDia, calientes1a7, calientes);
+      const poolRedoblona = priorizarPorVibracionYEstadisticas([...candidatos2], vibracionDia, calientes1a7, calientes, equivalentesBase);
       let parejasRedoblona = [];
-      if (poolRedoblona.length >= 4) {
-        parejasRedoblona.push(`${poolRedoblona[0]} con ${poolRedoblona[1]}`);
-        parejasRedoblona.push(`${poolRedoblona[2]} con ${poolRedoblona[3]}`);
-      } else if (poolRedoblona.length >= 2) {
-        parejasRedoblona.push(`${poolRedoblona[0]} con ${poolRedoblona[1]}`);
+      if (poolRedoblona.length >= 2) {
+        const primero = poolRedoblona[0];
+        const eqPrimero = obtenerEquivalente(primero);
+        const segundo = poolRedoblona.find(n => n !== primero && n === eqPrimero) || poolRedoblona[1];
+        parejasRedoblona.push(`${primero} con ${segundo}`);
       }
+      if (poolRedoblona.length >= 4) {
+        const tercero = poolRedoblona[2];
+        const eqTercero = obtenerEquivalente(tercero);
+        const cuarto = poolRedoblona.find(n => n !== tercero && n === eqTercero) || poolRedoblona[3];
+        parejasRedoblona.push(`${tercero} con ${cuarto}`);
+      }
+
+      const eqDestacados = seleccionPares.slice(0, 2).concat(seleccionImpares.slice(0, 2)).map(n => `${n}→${obtenerEquivalente(n)}`);
 
       resBox.innerHTML = `
         <div class="grid-2">
           <div class="card">
             <div class="card-title">Dígito Punta</div>
             <div class="card-value">${digitoPunta}</div>
+            <div class="card-sub">Equiv.: <b>${eqPunta}</b></div>
           </div>
           <div class="card">
             <div class="card-title">Ambos (Pares)</div>
@@ -803,6 +857,7 @@
         <div class="card-redoblona">
           <div class="card-title" style="color:#856404;">🎯 Redoblonas Sugeridas (1° al 7°)</div>
           <div class="card-value-gold">${parejasRedoblona.join('  |  ') || 'N/A'}</div>
+          <div class="card-sub">Equivalencias (0-5, 1-6, 2-7, 3-8, 4-9): <b>${eqDestacados.join(' · ') || 'N/A'}</b></div>
         </div>
         <div class="card">
           <div class="card-title">Ternos (3 Cifras)</div>
