@@ -156,7 +156,7 @@
     .card-sub {
       font-size: 12px;
       color: #6c757d;
-      margin-top: 5px;
+      margin-top: 4px;
     }
     .hot-badge {
       color: var(--hot);
@@ -590,15 +590,7 @@
 
     const ordenados = Object.keys(conteo).sort((a, b) => conteo[b] - conteo[a]);
     const calientes = ordenados.slice(0, 5);
-
-    // Evita mostrar el mismo número como caliente y frío cuando la muestra tiene pocos datos
-    let friosHtml = '<span style="font-size:12px; color:#6c757d;"><i>Carga más sorteos para comparar</i></span>';
-    if (ordenados.length > 3) {
-      const candidatosFrios = ordenados.slice(-5).reverse().filter(n => !calientes.includes(n));
-      if (candidatosFrios.length > 0) {
-        friosHtml = candidatosFrios.map(n => `<span class="badge-chip" style="color:var(--cold);">${n} <small>(${conteo[n]}x)</small></span>`).join('');
-      }
-    }
+    const frios = ordenados.slice(-5).reverse();
 
     let calientes1a7 = [];
     let htmlRedoblonaStats = '';
@@ -630,14 +622,14 @@
           </div>
           <div>
             <span class="cold-badge">❄️ Fríos / Atrasados:</span><br>
-            ${friosHtml}
+            ${frios.map(n => `<span class="badge-chip" style="color:var(--cold);">${n} <small>(${conteo[n]}x)</small></span>`).join('')}
           </div>
         </div>
         ${htmlRedoblonaStats}
       </div>
     `;
 
-    return { calientes, frios: [], calientes1a7 };
+    return { calientes, frios, calientes1a7 };
   }
 
   function calcularNumeroAtraccion(fechaStr) {
@@ -649,6 +641,7 @@
     return suma;
   }
 
+  // Peso principal: calientes directos y vibración; Peso suave: equivalentes (0-5, 1-6, 2-7, 3-8, 4-9) y zona 1-7
   function priorizarPorVibracionYEstadisticas(listaNumeros, vibracion, calientes, calientesSecundarios = [], equivalentes = []) {
     const vibracionStr = vibracion.toString();
     
@@ -821,6 +814,7 @@
       const seleccionTernos = priorizarPorVibracionYEstadisticas([...candidatos3], vibracionDia, calientes, [], equivalentesBase).slice(0, 4);
       const seleccionCuaternos = priorizarPorVibracionYEstadisticas([...candidatos4], vibracionDia, calientes, [], equivalentesBase).slice(0, 4);
 
+      // Redoblonas (1° al 7°) apoyadas en ambos fuertes + equivalente espejo (0-5, 1-6, 2-7, 3-8, 4-9)
       const poolRedoblona = priorizarPorVibracionYEstadisticas([...candidatos2], vibracionDia, calientes1a7, calientes, equivalentesBase);
       let parejasRedoblona = [];
       if (poolRedoblona.length >= 2) {
