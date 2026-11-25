@@ -212,8 +212,8 @@
   <label for="gameSelect">Selecciona el Juego / Sorteo:</label>
   <select id="gameSelect" onchange="alCambiarJuego()">
     <option value="quiniela">Quiniela (Paraguay)</option>
-    <option value="megalotto">Mega Lotto PY (Miércoles y Domingo)</option>
-    <option value="quini6">Quini 6 (Miércoles y Domingo)</option>
+    <option value="megalotto">Mega Lotto PY (01 - 36)</option>
+    <option value="quini6">Quini 6 (00 - 45)</option>
   </select>
 
   <!-- SELECTOR DE TURNO EXCLUSIVO PARA QUINIELA -->
@@ -356,7 +356,7 @@
         <option value="revancha">Mega Revancha</option>
         <option value="chance">Mega Chance</option>
       `;
-      resultLabel.innerText = '6 Números Ganadores (separados por espacio):';
+      resultLabel.innerText = '6 Números Ganadores (01 al 36):';
       resultInput.placeholder = 'Ejemplo: 04 12 18 25 31 36';
     } else if (juego === 'quini6') {
       subLabel.innerText = 'Modalidad Extraída:';
@@ -366,7 +366,7 @@
         <option value="revancha">Revancha</option>
         <option value="siempre_sale">Siempre Sale</option>
       `;
-      resultLabel.innerText = '6 Números Ganadores (separados por espacio):';
+      resultLabel.innerText = '6 Números Ganadores (00 al 45):';
       resultInput.placeholder = 'Ejemplo: 02 11 19 24 33 41';
     }
 
@@ -611,35 +611,51 @@
     return Array.from(encontrados);
   }
 
-  function obtenerNumerosLotoDiversificados(niveles, min, max, vibracionDia, calientes) {
+  // ALGORITMO DIFERENCIADO Y AJUSTADO A LÍMITES ESTRICTOS DE CADA JUEGO
+  function obtenerNumerosLotoDiversificados(niveles, min, max, vibracionDia, calientes, juego) {
     const encontrados = new Set();
     const strNiveles = niveles.map(n => n.join(''));
     
-    // Extracción base de la pirámide
+    // 1. Extraer parejas de la pirámide
     for (let fila of strNiveles) {
       for (let i = 0; i <= fila.length - 2; i++) {
         encontrados.add(fila.substring(i, i + 2));
       }
     }
 
-    // Salto y desplazamiento vibracional (Evita sesgo fijo de fecha)
+    // 2. Semilla única para diferenciar Mega Lotto de Quini 6 cuando no hay histórico
+    const semillaJuego = juego === 'megalotto' ? 3 : 7;
     const digitosBase = niveles[0];
     for (let i = 0; i < digitosBase.length; i++) {
-      let num1 = (digitosBase[i] + vibracionDia) % 10;
-      let num2 = (digitosBase[(i + vibracionDia) % digitosBase.length]);
+      let num1 = (digitosBase[i] + vibracionDia + semillaJuego) % 10;
+      let num2 = (digitosBase[(i + vibracionDia + semillaJuego) % digitosBase.length]);
       encontrados.add(`${num1}${num2}`);
       encontrados.add(`${num2}${num1}`);
     }
 
-    let validos = Array.from(encontrados)
-      .map(n => parseInt(n))
-      .filter(n => n >= min && n <= max)
-      .map(n => n < 10 ? '0' + n : '' + n);
+    // 3. Normalizar números al RANGO ESTRICTO DEL JUEGO (Ajusta los números > max)
+    let validosEstructurados = [];
+    encontrados.forEach(strVal => {
+      let val = parseInt(strVal);
+      if (isNaN(val)) return;
 
-    // Cruzar con peso de estadísticas históricas cargadas
-    let ordenados = priorizarPorVibracionYEstadisticas(validos, vibracionDia, calientes);
+      // Si supera el máximo del juego (ej. > 36 para Mega Lotto), lo reajusta mediante ciclo
+      if (val > max) {
+        val = min + (val % (max - min + 1));
+      } else if (val < min) {
+        val = min + val;
+      }
 
-    // Filtro de Diversificación de Décadas (Máximo 2 por década)
+      let numFormatted = val < 10 ? '0' + val : '' + val;
+      if (!validosEstructurados.includes(numFormatted)) {
+        validosEstructurados.push(numFormatted);
+      }
+    });
+
+    // 4. Cruzar con las estadísticas cargadas
+    let ordenados = priorizarPorVibracionYEstadisticas(validosEstructurados, vibracionDia, calientes);
+
+    // 5. Filtro de Distribución (Máximo 2 por década para evitar aglomeración)
     let seleccionados = [];
     let conteoDecanas = {};
 
@@ -652,9 +668,10 @@
       if (seleccionados.length === 6) break;
     }
 
+    // 6. Relleno controlado que Respeta el Límite del Juego
     let intento = 1;
     while (seleccionados.length < 6) {
-      let rand = ((vibracionDia * 7 + intento * 13) % (max - min + 1)) + min;
+      let rand = ((vibracionDia * 11 + intento * semillaJuego * 17) % (max - min + 1)) + min;
       let randStr = rand < 10 ? '0' + rand : '' + rand;
       if (!seleccionados.includes(randStr)) {
         seleccionados.push(randStr);
@@ -729,7 +746,7 @@
       }
       document.getElementById('resultsTitle').innerText = `Jugada Única Recomendada para ${nombre}`;
 
-      const finalNums = obtenerNumerosLotoDiversificados(niveles, min, max, vibracionDia, calientes);
+      const finalNums = obtenerNumerosLotoDiversificados(niveles, min, max, vibracionDia, calientes, juego);
 
       resBox.innerHTML = `
         <div class="card">
