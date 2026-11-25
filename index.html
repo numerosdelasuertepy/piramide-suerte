@@ -262,8 +262,8 @@
       <select id="adminSubSelect" onchange="renderizarTablaAdmin()"></select>
     </div>
 
-    <label for="adminDrawResult" id="adminResultLabel">Número a la Cabeza (2 cifras):</label>
-    <input type="text" id="adminDrawResult" placeholder="Ejemplo: 45">
+    <label for="adminDrawResult" id="adminResultLabel">Número a la Cabeza (3 cifras):</label>
+    <input type="text" id="adminDrawResult" placeholder="Ejemplo: 745">
 
     <button class="btn-secondary" onclick="guardarSorteoAdmin()">Registrar Sorteo</button>
 
@@ -281,6 +281,7 @@
   const urlParams = new URLSearchParams(window.location.search);
   if (urlParams.get('admin') === '1') {
     document.getElementById('adminPanel').style.display = 'block';
+    actualizarFormularioAdmin();
   }
 
   function toggleAdminPanel() {
@@ -305,7 +306,7 @@
 
     if ((juego === 'quini6' || juego === 'megalotto') && fechaVal) {
       const fechaObj = new Date(fechaVal + 'T00:00:00');
-      const diaSemana = fechaObj.getDay(); // 0 = Domingo, 3 = Miércoles
+      const diaSemana = fechaObj.getDay();
       if (diaSemana !== 0 && diaSemana !== 3) {
         warning.style.display = 'block';
       } else {
@@ -347,8 +348,8 @@
         <option value="vespertino">Vespertino</option>
         <option value="nocturno">Nocturno</option>
       `;
-      resultLabel.innerText = 'Número a la Cabeza (2 cifras):';
-      resultInput.placeholder = 'Ejemplo: 45';
+      resultLabel.innerText = 'Número a la Cabeza (3 cifras):';
+      resultInput.placeholder = 'Ejemplo: 745';
     } else if (juego === 'megalotto') {
       subLabel.innerText = 'Modalidad Extraída:';
       subSelect.innerHTML = `
@@ -480,9 +481,17 @@
       lista.forEach(item => {
         const tokens = item.resultado.replace(/[\n\r;,-]/g, ' ').split(/\s+/).filter(t => t.length > 0);
         tokens.forEach(t => {
-          let num = parseInt(t);
-          if (!isNaN(num)) {
-            todosResultados.push(num < 10 ? '0' + num : '' + num);
+          let limpio = t.replace(/\D/g, '');
+          if (limpio.length > 0) {
+            if (juego === 'quiniela') {
+              let ambo = limpio.length >= 2 ? limpio.slice(-2) : '0' + limpio;
+              todosResultados.push(ambo);
+            } else {
+              let num = parseInt(limpio, 10);
+              if (!isNaN(num)) {
+                todosResultados.push(num < 10 ? '0' + num : '' + num);
+              }
+            }
           }
         });
       });
@@ -611,19 +620,16 @@
     return Array.from(encontrados);
   }
 
-  // ALGORITMO DIFERENCIADO Y AJUSTADO A LÍMITES ESTRICTOS DE CADA JUEGO
   function obtenerNumerosLotoDiversificados(niveles, min, max, vibracionDia, calientes, juego) {
     const encontrados = new Set();
     const strNiveles = niveles.map(n => n.join(''));
     
-    // 1. Extraer parejas de la pirámide
     for (let fila of strNiveles) {
       for (let i = 0; i <= fila.length - 2; i++) {
         encontrados.add(fila.substring(i, i + 2));
       }
     }
 
-    // 2. Semilla única para diferenciar Mega Lotto de Quini 6 cuando no hay histórico
     const semillaJuego = juego === 'megalotto' ? 3 : 7;
     const digitosBase = niveles[0];
     for (let i = 0; i < digitosBase.length; i++) {
@@ -633,13 +639,11 @@
       encontrados.add(`${num2}${num1}`);
     }
 
-    // 3. Normalizar números al RANGO ESTRICTO DEL JUEGO (Ajusta los números > max)
     let validosEstructurados = [];
     encontrados.forEach(strVal => {
       let val = parseInt(strVal);
       if (isNaN(val)) return;
 
-      // Si supera el máximo del juego (ej. > 36 para Mega Lotto), lo reajusta mediante ciclo
       if (val > max) {
         val = min + (val % (max - min + 1));
       } else if (val < min) {
@@ -652,10 +656,8 @@
       }
     });
 
-    // 4. Cruzar con las estadísticas cargadas
     let ordenados = priorizarPorVibracionYEstadisticas(validosEstructurados, vibracionDia, calientes);
 
-    // 5. Filtro de Distribución (Máximo 2 por década para evitar aglomeración)
     let seleccionados = [];
     let conteoDecanas = {};
 
@@ -668,7 +670,6 @@
       if (seleccionados.length === 6) break;
     }
 
-    // 6. Relleno controlado que Respeta el Límite del Juego
     let intento = 1;
     while (seleccionados.length < 6) {
       let rand = ((vibracionDia * 11 + intento * semillaJuego * 17) % (max - min + 1)) + min;
